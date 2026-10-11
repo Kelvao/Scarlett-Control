@@ -1,6 +1,20 @@
 [Desktop Entry]
 Name=Scarlett 2i2 Control
-Comment=Controle de entradas (Inst, Air, 48V) e saída (Direct Monitor) para Focusrite Scarlett 2i2
+Name[pt_BR]=Controle Scarlett 2i2
+Name[es]=Control Scarlett 2i2
+Name[fr]=Contrôle Scarlett 2i2
+Name[de]=Scarlett 2i2 Steuerung
+Name[it]=Controllo Scarlett 2i2
+Name[ja]=Scarlett 2i2 コントロール
+Name[zh_CN]=Scarlett 2i2 控制
+Comment=Hardware input (Inst, Air, 48V) and output control for Focusrite Scarlett 2i2
+Comment[pt_BR]=Controle de entradas (Inst, Air, 48V) e saída (Direct Monitor) para Focusrite Scarlett 2i2
+Comment[es]=Control de entradas (Inst, Air, 48V) y salida para Focusrite Scarlett 2i2
+Comment[fr]=Contrôle des entrées (Inst, Air, 48V) et sortie pour Focusrite Scarlett 2i2
+Comment[de]=Steuerung von Eingängen (Inst, Air, 48V) und Ausgang für Focusrite Scarlett 2i2
+Comment[it]=Controllo ingressi (Inst, Air, 48V) e uscita per Focusrite Scarlett 2i2
+Comment[ja]=Focusrite Scarlett 2i2 の入力 (Inst, Air, 48V) および出力コントロール
+Comment[zh_CN]=Focusrite Scarlett 2i2 输入 (Inst, Air, 48V) 及输出硬件控制
 Exec=scarlett-control tray
 Icon=scarlett-control
 Terminal=false
@@ -8,4 +22,3 @@ Type=Application
 Categories=AudioVideo;Audio;Mixer;
 StartupNotify=false
 X-GNOME-Autostart-enabled=true
-
