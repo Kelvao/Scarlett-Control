@@ -12,6 +12,7 @@
   "menu_mon_off": "  Direct Monitor: Aus",
   "menu_mon_mono": "  Direct Monitor: Mono",
   "menu_mon_stereo": "  Direct Monitor: Stereo",
+  "menu_autostart": "  Mit dem System starten",
   "menu_quit": "Beenden",
   
   "tray_started": "Systemleisten-Daemon erfolgreich gestartet.",

@@ -12,6 +12,7 @@
   "menu_mon_off": "  直接监听: 关闭",
   "menu_mon_mono": "  直接监听: 单声道",
   "menu_mon_stereo": "  直接监听: 立体声",
+  "menu_autostart": "  随系统启动",
   "menu_quit": "退出",
   
   "tray_started": "系统托盘守护进程已成功启动。",

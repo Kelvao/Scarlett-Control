@@ -105,6 +105,13 @@ int main(void) {
     i18n_init("zh_CN");
     assert(i18n_get_lang() == I18N_LANG_ZH);
     assert(strcmp(_("Quit"), "退出") == 0);
+    assert(strcmp(_("menu_autostart"), "  随系统启动") == 0);
+
+    /* Testar menu_autostart em inglês e português */
+    i18n_init("en");
+    assert(strcmp(_("menu_autostart"), "  Start with system") == 0);
+    i18n_init("pt_BR");
+    assert(strcmp(_("menu_autostart"), "  Iniciar com o sistema") == 0);
 
     /* Fallback para texto não cadastrado */
     assert(strcmp(_("Unmapped String 123"), "Unmapped String 123") == 0);

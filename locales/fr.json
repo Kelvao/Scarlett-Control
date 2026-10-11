@@ -12,6 +12,7 @@
   "menu_mon_off": "  Direct Monitor : Désactivé",
   "menu_mon_mono": "  Direct Monitor : Mono",
   "menu_mon_stereo": "  Direct Monitor : Stéréo",
+  "menu_autostart": "  Démarrer avec le système",
   "menu_quit": "Quitter",
   
   "tray_started": "Démon de la barre d'état système démarré avec succès.",

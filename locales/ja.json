@@ -12,6 +12,7 @@
   "menu_mon_off": "  ダイレクトモニター: オフ",
   "menu_mon_mono": "  ダイレクトモニター: モノラル",
   "menu_mon_stereo": "  ダイレクトモニター: ステレオ",
+  "menu_autostart": "  システム起動時に開始",
   "menu_quit": "終了",
   
   "tray_started": "システムトレイデーモンが正常に起動しました。",

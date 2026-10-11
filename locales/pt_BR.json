@@ -12,6 +12,7 @@
   "menu_mon_off": "  Direct Monitor: Desligado",
   "menu_mon_mono": "  Direct Monitor: Mono",
   "menu_mon_stereo": "  Direct Monitor: Estéreo",
+  "menu_autostart": "  Iniciar com o sistema",
   "menu_quit": "Sair",
   
   "tray_started": "Daemon da bandeja do sistema iniciado com sucesso.",

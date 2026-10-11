@@ -41,6 +41,7 @@ static const struct {
     {"menu_mon_off", "  Direct Monitor: Off", "  Direct Monitor: Desligado"},
     {"menu_mon_mono", "  Direct Monitor: Mono", "  Direct Monitor: Mono"},
     {"menu_mon_stereo", "  Direct Monitor: Stereo", "  Direct Monitor: Estéreo"},
+    {"menu_autostart", "  Start with system", "  Iniciar com o sistema"},
     {"menu_quit", "Quit", "Sair"},
     {"tray_started", "System tray daemon started successfully.", "Daemon da bandeja do sistema iniciado com sucesso."},
     {"device_reconnected", "Focusrite device reconnected successfully!", "Dispositivo Focusrite reconectado com sucesso!"},

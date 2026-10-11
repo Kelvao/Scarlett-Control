@@ -12,6 +12,7 @@
   "menu_mon_off": "  Direct Monitor: Off",
   "menu_mon_mono": "  Direct Monitor: Mono",
   "menu_mon_stereo": "  Direct Monitor: Stereo",
+  "menu_autostart": "  Start with system",
   "menu_quit": "Quit",
   
   "tray_started": "System tray daemon started successfully.",
