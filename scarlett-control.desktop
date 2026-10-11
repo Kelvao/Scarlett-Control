@@ -1,0 +1,11 @@
+[Desktop Entry]
+Name=Scarlett 2i2 Control
+Comment=Controle de entradas (Inst, Air, 48V) e saída (Direct Monitor) para Focusrite Scarlett 2i2
+Exec=scarlett-control tray
+Icon=scarlett-control
+Terminal=false
+Type=Application
+Categories=AudioVideo;Audio;Mixer;
+StartupNotify=false
+X-GNOME-Autostart-enabled=true
+

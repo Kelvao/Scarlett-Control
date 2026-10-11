@@ -1,0 +1,26 @@
+# Maintainer: Community <scarlett-control@localhost>
+pkgname=scarlett-control
+pkgver=1.0.0
+pkgrel=1
+pkgdesc="Controle leve de hardware e system tray para Focusrite Scarlett 2i2"
+arch=('x86_64' 'aarch64')
+url="https://github.com/kelvao/scarlett-control"
+license=('GPL2')
+depends=('glibc')
+optdepends=(
+    'gtk3: para suporte ao ícone na bandeja do sistema'
+    'libayatana-appindicator: para suporte a StatusNotifierItem no GNOME/KDE'
+)
+source=("$pkgname-$pkgver.tar.gz")
+sha256sums=('SKIP')
+
+build() {
+    cd "$pkgname-$pkgver"
+    make
+}
+
+package() {
+    cd "$pkgname-$pkgver"
+    make DESTDIR="$pkgdir" PREFIX="/usr" install
+}
+

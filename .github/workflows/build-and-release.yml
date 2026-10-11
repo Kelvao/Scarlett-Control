@@ -1,0 +1,204 @@
+name: Build & Release Multi-Distro Linux Binaries
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      create_release:
+        description: 'Publicar release no GitHub automaticamente?'
+        required: false
+        type: boolean
+        default: false
+
+permissions:
+  contents: write
+
+jobs:
+  # =========================================================================
+  # 1. MATRIZ DE TESTES EM DIFERENTES DISTRIBUIÇÕES LINUX
+  # =========================================================================
+  test-distros:
+    name: Testar compilação em ${{ matrix.distro.name }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        distro:
+          - name: Ubuntu Latest
+            image: ubuntu:latest
+            setup: apt-get update && apt-get install -y gcc make
+          - name: Debian Stable
+            image: debian:stable-slim
+            setup: apt-get update && apt-get install -y gcc make
+          - name: Fedora Latest
+            image: fedora:latest
+            setup: dnf install -y gcc make
+          - name: Arch Linux
+            image: archlinux:latest
+            setup: pacman -Syu --noconfirm base-devel
+          - name: Alpine Linux (musl)
+            image: alpine:latest
+            setup: apk add --no-cache gcc make musl-dev linux-headers
+    container:
+      image: ${{ matrix.distro.image }}
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar dependências básicas de compilação
+        run: ${{ matrix.distro.setup }}
+
+      - name: Compilar
+        run: make
+
+      - name: Executar testes unitários
+        run: make test
+
+      - name: Testar execução do comando de ajuda
+        run: ./scarlett-control --help
+
+  # =========================================================================
+  # 2. GERAÇÃO DOS BINÁRIOS E PACOTES (.deb, .rpm, .AppImage, .tar.gz)
+  # =========================================================================
+  build-packages:
+    name: Gerar Pacotes Linux (x86_64 & aarch64)
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Instalar ferramentas de empacotamento
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc make rpm file curl zsync \
+            gcc-aarch64-linux-gnu binutils-aarch64-linux-gnu
+
+      - name: Determinar versão
+        id: get_version
+        run: |
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            VERSION="${GITHUB_REF_NAME#v}"
+          else
+            VERSION="1.0.0"
+          fi
+          echo "VERSION=${VERSION}" >> $GITHUB_OUTPUT
+          echo "Versão definida: ${VERSION}"
+
+      - name: Criar diretório de saída
+        run: mkdir -p dist
+
+      # ---------------------------------------------------------------------
+      # BUILD X86_64
+      # ---------------------------------------------------------------------
+      - name: Compilar x86_64 (compatibilidade glibc ampla)
+        run: |
+          make clean
+          make CFLAGS="-O2 -Wall -Wextra"
+          chmod +x packaging/*.sh
+
+      - name: Gerar Tarball Portável (x86_64)
+        run: |
+          TAR_DIR="scarlett-control-v${{ steps.get_version.outputs.VERSION }}-linux-x86_64"
+          mkdir -p "${TAR_DIR}"
+          cp scarlett-control "${TAR_DIR}/"
+          cp scarlett-control.desktop "${TAR_DIR}/"
+          cp Makefile "${TAR_DIR}/"
+          cp packaging/install.sh "${TAR_DIR}/"
+          mkdir -p "${TAR_DIR}/assets"
+          cp assets/scarlett-control.svg "${TAR_DIR}/assets/"
+          mkdir -p "${TAR_DIR}/locales"
+          cp locales/*.json "${TAR_DIR}/locales/"
+          cp README.md "${TAR_DIR}/"
+          tar -czvf "dist/${TAR_DIR}.tar.gz" "${TAR_DIR}"
+          rm -rf "${TAR_DIR}"
+
+      - name: Gerar Pacote Debian (.deb x86_64)
+        run: ./packaging/build-deb.sh "${{ steps.get_version.outputs.VERSION }}" "amd64"
+
+      - name: Gerar Pacote RPM (.rpm x86_64)
+        run: ./packaging/build-rpm.sh "${{ steps.get_version.outputs.VERSION }}" "x86_64"
+
+      - name: Gerar AppImage Universal (x86_64)
+        run: ./packaging/build-appimage.sh "${{ steps.get_version.outputs.VERSION }}" "x86_64"
+
+      # ---------------------------------------------------------------------
+      # BUILD AARCH64 (ARM64 / Raspberry Pi / Apple Silicon Asahi)
+      # ---------------------------------------------------------------------
+      - name: Cross-compilar aarch64 (ARM64)
+        run: |
+          make clean
+          CC=aarch64-linux-gnu-gcc make CFLAGS="-O2 -Wall -Wextra"
+
+      - name: Gerar Tarball Portável (aarch64)
+        run: |
+          TAR_DIR="scarlett-control-v${{ steps.get_version.outputs.VERSION }}-linux-aarch64"
+          mkdir -p "${TAR_DIR}"
+          cp scarlett-control "${TAR_DIR}/"
+          cp scarlett-control.desktop "${TAR_DIR}/"
+          cp Makefile "${TAR_DIR}/"
+          cp packaging/install.sh "${TAR_DIR}/"
+          mkdir -p "${TAR_DIR}/assets"
+          cp assets/scarlett-control.svg "${TAR_DIR}/assets/"
+          mkdir -p "${TAR_DIR}/locales"
+          cp locales/*.json "${TAR_DIR}/locales/"
+          cp README.md "${TAR_DIR}/"
+          tar -czvf "dist/${TAR_DIR}.tar.gz" "${TAR_DIR}"
+          rm -rf "${TAR_DIR}"
+
+      - name: Gerar Pacote Debian (.deb aarch64)
+        run: ./packaging/build-deb.sh "${{ steps.get_version.outputs.VERSION }}" "arm64"
+
+      - name: Gerar Pacote RPM (.rpm aarch64)
+        run: ./packaging/build-rpm.sh "${{ steps.get_version.outputs.VERSION }}" "aarch64"
+
+      # ---------------------------------------------------------------------
+      # CHECKSUMS & ARTIFACTS
+      # ---------------------------------------------------------------------
+      - name: Gerar Checksums SHA256
+        run: |
+          cd dist
+          sha256sum * > SHA256SUMS.txt
+          cat SHA256SUMS.txt
+
+      - name: Fazer Upload dos Artefatos
+        uses: actions/upload-artifact@v4
+        with:
+          name: scarlett-control-packages
+          path: dist/*
+          if-no-files-found: error
+
+  # =========================================================================
+  # 3. PUBLICAR RELEASE NO GITHUB
+  # =========================================================================
+  publish-release:
+    name: Publicar Release no GitHub
+    needs: [test-distros, build-packages]
+    if: >
+      github.event_name == 'release' ||
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.create_release == true)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repositório
+        uses: actions/checkout@v4
+
+      - name: Baixar artefatos gerados
+        uses: actions/download-artifact@v4
+        with:
+          name: scarlett-control-packages
+          path: dist
+
+      - name: Publicar Release com os Arquivos
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*
+          generate_release_notes: true
+          fail_on_unmatched_files: true
+

@@ -1,0 +1,24 @@
+# Build binaries
+scarlett-control
+test_parser
+
+# Object files and libraries
+*.o
+*.so
+*.a
+
+# Distribution packages and temporary build folders
+dist/
+build/
+*.AppImage
+*.deb
+*.rpm
+*.tar.gz
+SHA256SUMS.txt
+
+# Editor and IDE files
+.vscode/
+.idea/
+*.swp
+*~
+
