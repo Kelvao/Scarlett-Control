@@ -51,5 +51,14 @@ uninstall:
 	rm -f $(DESTDIR)$(DATADIR)/applications/scarlett-control.desktop
 	rm -f $(DESTDIR)$(DATADIR)/icons/hicolor/scalable/apps/scarlett-control.svg
 	rm -rf $(DESTDIR)$(DATADIR)/scarlett-control
+	rm -f $(DESTDIR)/etc/xdg/autostart/scarlett-control.desktop
 
-.PHONY: all clean test install install-user uninstall
+uninstall-user:
+	rm -f $(HOME)/.local/bin/$(TARGET)
+	rm -f $(HOME)/.local/share/applications/scarlett-control.desktop
+	rm -f $(HOME)/.local/share/icons/hicolor/scalable/apps/scarlett-control.svg
+	rm -rf $(HOME)/.local/share/scarlett-control
+	rm -f $(HOME)/.config/autostart/scarlett-control.desktop
+
+.PHONY: all clean test install install-user uninstall uninstall-user
+
