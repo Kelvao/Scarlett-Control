@@ -7,7 +7,7 @@ TARGET_DIR="dist"
 PKG_NAME="scarlett-control"
 PKG_DIR="${TARGET_DIR}/${PKG_NAME}_${VERSION}_${ARCH}"
 
-echo "==> Gerando pacote Debian (.deb) para ${ARCH}..."
+echo "==> Building Debian package (.deb) for ${ARCH}..."
 rm -rf "${PKG_DIR}"
 mkdir -p "${PKG_DIR}/DEBIAN"
 mkdir -p "${PKG_DIR}/usr/bin"
@@ -35,14 +35,13 @@ Version: ${VERSION}
 Section: sound
 Priority: optional
 Architecture: ${ARCH}
-Maintainer: Community <scarlett-control@localhost>
-Description: Controle de entradas (Inst, Air, 48V) e saída para Focusrite Scarlett 2i2
- Utilitário em C leve com suporte a linha de comando e ícone na bandeja do sistema
- (System Tray / AppIndicator) para controle de recursos de hardware da Scarlett 2i2.
+Maintainer: Kelvao <https://github.com/Kelvao/Scarlett-Control>
+Description: Hardware input (Inst, Air, 48V) and output control for Focusrite Scarlett 2i2
+ High-performance, lightweight C utility with CLI and system tray
+ indicator (AppIndicator / StatusNotifierItem) for Focusrite Scarlett 2i2.
 Recommends: libayatana-appindicator3-1 | libappindicator3-1, libgtk-3-0
 EOF
 
 dpkg-deb --build --root-owner-group "${PKG_DIR}" "${TARGET_DIR}/${PKG_NAME}_${VERSION}_${ARCH}.deb"
 rm -rf "${PKG_DIR}"
-echo "==> Pacote criado: ${TARGET_DIR}/${PKG_NAME}_${VERSION}_${ARCH}.deb"
-
+echo "==> Package created: ${TARGET_DIR}/${PKG_NAME}_${VERSION}_${ARCH}.deb"

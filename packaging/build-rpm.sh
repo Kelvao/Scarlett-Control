@@ -6,7 +6,7 @@ ARCH="${2:-x86_64}"
 TARGET_DIR="dist"
 RPMBUILD_DIR="/tmp/scarlett-rpmbuild"
 
-echo "==> Gerando pacote RPM para ${ARCH}..."
+echo "==> Building RPM package for ${ARCH}..."
 rm -rf "${RPMBUILD_DIR}"
 mkdir -p "${RPMBUILD_DIR}"/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
 
@@ -28,5 +28,4 @@ rpmbuild --define "_topdir ${RPMBUILD_DIR}" \
 mkdir -p "${TARGET_DIR}"
 cp "${RPMBUILD_DIR}/RPMS/${ARCH}"/*.rpm "${TARGET_DIR}/"
 rm -rf "${RPMBUILD_DIR}"
-echo "==> RPM gerado em ${TARGET_DIR}/"
-
+echo "==> RPM package generated in ${TARGET_DIR}/"

@@ -9,27 +9,26 @@ for arg in "$@"; do
             USER_MODE=1
             ;;
         --help|-h)
-            echo "Uso: $0 [--user]"
-            echo "  Sem argumentos: instala no sistema (/usr/local)"
-            echo "  --user:        instala apenas para o usuário atual (~/.local)"
+            echo "Usage: $0 [--user]"
+            echo "  No arguments: install system-wide (/usr/local)"
+            echo "  --user:       install for the current user only (~/.local)"
             exit 0
             ;;
     esac
 done
 
 if [ "$USER_MODE" -eq 1 ]; then
-    echo "Instalando para o usuário atual (~/.local)..."
+    echo "Installing for the current user (~/.local)..."
     make install-user
 else
     if [ "$(id -u)" -ne 0 ]; then
-        echo "Aviso: Instalação no sistema requer permissões de root."
-        echo "Executando: sudo make install"
+        echo "Note: System-wide installation requires root privileges."
+        echo "Running: sudo make install"
         sudo make install
     else
         make install
     fi
 fi
 
-echo "Instalação concluída com sucesso!"
-echo "Você pode executar 'scarlett-control' no terminal ou abrir pelo menu de aplicativos."
-
+echo "Installation completed successfully!"
+echo "You can launch 'scarlett-control' from the terminal or your application launcher."

@@ -6,7 +6,7 @@ ARCH="${2:-x86_64}"
 TARGET_DIR="dist"
 APP_DIR="/tmp/ScarlettControl.AppDir"
 
-echo "==> Gerando AppImage para ${ARCH}..."
+echo "==> Building AppImage for ${ARCH}..."
 rm -rf "${APP_DIR}"
 mkdir -p "${APP_DIR}/usr/bin"
 mkdir -p "${APP_DIR}/usr/share/applications"
@@ -60,7 +60,7 @@ chmod +x "${APP_DIR}/AppRun"
 mkdir -p "${TARGET_DIR}"
 if ! command -v appimagetool >/dev/null 2>&1; then
     if [ ! -f /tmp/squashfs-root/AppRun ]; then
-        echo "Baixando appimagetool..."
+        echo "Downloading appimagetool..."
         curl -fsSL -o /tmp/appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${ARCH}.AppImage"
         chmod +x /tmp/appimagetool
         (cd /tmp && ./appimagetool --appimage-extract)
@@ -75,5 +75,4 @@ UPDATE_INFO="gh-releases-zsync|Kelvao|Scarlett-Control|latest|scarlett-control-*
 ARCH="${ARCH}" "${TOOL}" -u "${UPDATE_INFO}" "${APP_DIR}" "${TARGET_DIR}/scarlett-control-${VERSION}-${ARCH}.AppImage"
 
 rm -rf "${APP_DIR}"
-echo "==> AppImage e zsync gerados com sucesso em ${TARGET_DIR}/"
-
+echo "==> AppImage and zsync generated successfully in ${TARGET_DIR}/"

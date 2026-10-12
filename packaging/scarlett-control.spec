@@ -5,14 +5,14 @@
 Name:           scarlett-control
 Version:        %{?pkg_version}%{!?pkg_version:1.0.0}
 Release:        1%{?dist}
-Summary:        Controle de hardware e system tray para Focusrite Scarlett 2i2
-License:        GPL-2.0-or-later
-URL:            https://github.com/kelvao/scarlett-control
+Summary:        Hardware control and system tray indicator for Focusrite Scarlett 2i2
+License:        MIT
+URL:            https://github.com/Kelvao/Scarlett-Control
 
 %description
-Controle em C para Focusrite Scarlett 2i2 em qualquer ambiente Linux.
-Suporta alternância de nível (Line/Inst), modo Air, Phantom Power (+48V)
-e monitoramento direto (Off/Mono/Stereo) via terminal e bandeja do sistema.
+High-performance, lightweight C utility for Focusrite Scarlett 2i2 interfaces
+on Linux. Supports input impedance switching (Line/Inst), Air mode, Phantom Power (+48V),
+and direct monitoring (Off/Mono/Stereo) via both CLI and system tray.
 
 %install
 mkdir -p %{buildroot}%{_bindir}
@@ -36,5 +36,4 @@ install -m 644 %{_sourcedir}/locales/*.json %{buildroot}%{_datadir}/scarlett-con
 
 %changelog
 * Sun Oct 11 2026 Developer <dev@localhost> - 1.0.0-1
-- Initial RPM release
-
+- Initial release
