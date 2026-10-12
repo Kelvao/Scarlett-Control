@@ -49,7 +49,18 @@ static void (*p_gtk_widget_show_all)(GtkWidget *widget) = NULL;
 static void (*p_gtk_widget_set_sensitive)(GtkWidget *widget, int sensitive) = NULL;
 static unsigned long (*p_g_signal_connect_data)(void *instance, const char *detailed_signal, void *c_handler, void *data, void *destroy_data, int connect_flags) = NULL;
 static unsigned int (*p_g_timeout_add)(unsigned int interval, int (*function)(void*), void *data) = NULL;
-static void (*p_gtk_show_about_dialog)(void *parent, const char *first_property_name, ...) = NULL;
+static void* (*p_gtk_about_dialog_new)(void) = NULL;
+static void (*p_gtk_about_dialog_set_program_name)(void *dialog, const char *name) = NULL;
+static void (*p_gtk_about_dialog_set_version)(void *dialog, const char *version) = NULL;
+static void (*p_gtk_about_dialog_set_comments)(void *dialog, const char *comments) = NULL;
+static void (*p_gtk_about_dialog_set_website)(void *dialog, const char *website) = NULL;
+static void (*p_gtk_about_dialog_set_website_label)(void *dialog, const char *label) = NULL;
+static void (*p_gtk_about_dialog_set_logo_icon_name)(void *dialog, const char *icon_name) = NULL;
+static void (*p_gtk_about_dialog_set_authors)(void *dialog, const char **authors) = NULL;
+static void (*p_gtk_about_dialog_set_license_type)(void *dialog, int license_type) = NULL;
+static void (*p_gtk_window_set_position)(void *window, int position) = NULL;
+static void (*p_gtk_window_present)(void *window) = NULL;
+static void (*p_gtk_widget_destroy)(void *widget) = NULL;
 
 /* AppIndicator pointers */
 static AppIndicator* (*p_app_indicator_new)(const char *id, const char *icon_name, AppIndicatorCategory category) = NULL;
@@ -249,23 +260,60 @@ static void on_autostart_toggled(void *item, void *user_data) {
     set_autostart_enabled(active);
 }
 
+static void on_about_response(void *dialog, int response_id, void *user_data) {
+    (void)response_id;
+    (void)user_data;
+    if (p_gtk_widget_destroy) {
+        p_gtk_widget_destroy(dialog);
+    }
+}
+
 static void on_about_clicked(void *item, void *user_data) {
     (void)item;
     (void)user_data;
-    if (p_gtk_show_about_dialog) {
+    if (!p_gtk_about_dialog_new) return;
+
+    void *dialog = p_gtk_about_dialog_new();
+    if (!dialog) return;
+
+    if (p_gtk_about_dialog_set_program_name) {
+        p_gtk_about_dialog_set_program_name(dialog, "Scarlett 2i2 Control");
+    }
+    if (p_gtk_about_dialog_set_version) {
+        p_gtk_about_dialog_set_version(dialog, "1.1.0");
+    }
+    if (p_gtk_about_dialog_set_comments) {
+        p_gtk_about_dialog_set_comments(dialog, _("about_comments"));
+    }
+    if (p_gtk_about_dialog_set_website) {
+        p_gtk_about_dialog_set_website(dialog, "https://github.com/Kelvao/Scarlett-Control");
+    }
+    if (p_gtk_about_dialog_set_website_label) {
+        p_gtk_about_dialog_set_website_label(dialog, "GitHub Repository");
+    }
+    if (p_gtk_about_dialog_set_logo_icon_name) {
+        p_gtk_about_dialog_set_logo_icon_name(dialog, "scarlett-control");
+    }
+    if (p_gtk_about_dialog_set_authors) {
         const char *authors[] = {"Kelvão", NULL};
-        p_gtk_show_about_dialog(
-            NULL,
-            "program-name", "Scarlett 2i2 Control",
-            "version", "1.0.0",
-            "comments", _("about_comments"),
-            "website", "https://github.com/Kelvao/Scarlett-Control",
-            "website-label", "GitHub Repository",
-            "logo-icon-name", "scarlett-control",
-            "authors", authors,
-            "license-type", 3 /* GTK_LICENSE_MIT_X11 */,
-            NULL
-        );
+        p_gtk_about_dialog_set_authors(dialog, authors);
+    }
+    if (p_gtk_about_dialog_set_license_type) {
+        p_gtk_about_dialog_set_license_type(dialog, 3 /* GTK_LICENSE_MIT_X11 */);
+    }
+    if (p_gtk_window_set_position) {
+        p_gtk_window_set_position(dialog, 1 /* GTK_WIN_POS_CENTER */);
+    }
+
+    if (p_g_signal_connect_data) {
+        p_g_signal_connect_data(dialog, "response", on_about_response, NULL, NULL, 0);
+    }
+
+    if (p_gtk_widget_show_all) {
+        p_gtk_widget_show_all(dialog);
+    }
+    if (p_gtk_window_present) {
+        p_gtk_window_present(dialog);
     }
 }
 
@@ -352,7 +400,20 @@ int tray_init_and_run(scarlett_device_t *dev) {
     LOAD_SYM(gtk_lib, p_gtk_widget_set_sensitive, gtk_widget_set_sensitive);
     LOAD_SYM(gtk_lib, p_g_signal_connect_data, g_signal_connect_data);
     LOAD_SYM(gtk_lib, p_g_timeout_add, g_timeout_add);
-    *(void**)(&p_gtk_show_about_dialog) = dlsym(gtk_lib, "gtk_show_about_dialog");
+
+    /* About dialog functions */
+    *(void**)(&p_gtk_about_dialog_new) = dlsym(gtk_lib, "gtk_about_dialog_new");
+    *(void**)(&p_gtk_about_dialog_set_program_name) = dlsym(gtk_lib, "gtk_about_dialog_set_program_name");
+    *(void**)(&p_gtk_about_dialog_set_version) = dlsym(gtk_lib, "gtk_about_dialog_set_version");
+    *(void**)(&p_gtk_about_dialog_set_comments) = dlsym(gtk_lib, "gtk_about_dialog_set_comments");
+    *(void**)(&p_gtk_about_dialog_set_website) = dlsym(gtk_lib, "gtk_about_dialog_set_website");
+    *(void**)(&p_gtk_about_dialog_set_website_label) = dlsym(gtk_lib, "gtk_about_dialog_set_website_label");
+    *(void**)(&p_gtk_about_dialog_set_logo_icon_name) = dlsym(gtk_lib, "gtk_about_dialog_set_logo_icon_name");
+    *(void**)(&p_gtk_about_dialog_set_authors) = dlsym(gtk_lib, "gtk_about_dialog_set_authors");
+    *(void**)(&p_gtk_about_dialog_set_license_type) = dlsym(gtk_lib, "gtk_about_dialog_set_license_type");
+    *(void**)(&p_gtk_window_set_position) = dlsym(gtk_lib, "gtk_window_set_position");
+    *(void**)(&p_gtk_window_present) = dlsym(gtk_lib, "gtk_window_present");
+    *(void**)(&p_gtk_widget_destroy) = dlsym(gtk_lib, "gtk_widget_destroy");
 
     /* Initialize GTK without requiring command line args */
     int argc = 0;
