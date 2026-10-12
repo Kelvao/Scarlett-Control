@@ -13,6 +13,8 @@
   "menu_mon_mono": "  直接监听: 单声道",
   "menu_mon_stereo": "  直接监听: 立体声",
   "menu_autostart": "  随系统启动",
+  "menu_about": "关于",
+  "about_comments": "专为 Linux 下 Focusrite Scarlett 2i2 声卡打造的快速轻量级硬件控制工具。",
   "menu_quit": "退出",
   
   "tray_started": "系统托盘守护进程已成功启动。",

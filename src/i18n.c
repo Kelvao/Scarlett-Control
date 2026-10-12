@@ -42,6 +42,8 @@ static const struct {
     {"menu_mon_mono", "  Direct Monitor: Mono", "  Direct Monitor: Mono"},
     {"menu_mon_stereo", "  Direct Monitor: Stereo", "  Direct Monitor: Estéreo"},
     {"menu_autostart", "  Start with system", "  Iniciar com o sistema"},
+    {"menu_about", "About", "Sobre"},
+    {"about_comments", "Fast, lightweight hardware control for Focusrite Scarlett 2i2 audio interfaces on Linux.", "Controle de hardware rápido e leve para interfaces de áudio Focusrite Scarlett 2i2 no Linux."},
     {"menu_quit", "Quit", "Sair"},
     {"tray_started", "System tray daemon started successfully.", "Daemon da bandeja do sistema iniciado com sucesso."},
     {"device_reconnected", "Focusrite device reconnected successfully!", "Dispositivo Focusrite reconectado com sucesso!"},

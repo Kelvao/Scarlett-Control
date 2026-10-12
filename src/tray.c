@@ -49,6 +49,7 @@ static void (*p_gtk_widget_show_all)(GtkWidget *widget) = NULL;
 static void (*p_gtk_widget_set_sensitive)(GtkWidget *widget, int sensitive) = NULL;
 static unsigned long (*p_g_signal_connect_data)(void *instance, const char *detailed_signal, void *c_handler, void *data, void *destroy_data, int connect_flags) = NULL;
 static unsigned int (*p_g_timeout_add)(unsigned int interval, int (*function)(void*), void *data) = NULL;
+static void (*p_gtk_show_about_dialog)(void *parent, const char *first_property_name, ...) = NULL;
 
 /* AppIndicator pointers */
 static AppIndicator* (*p_app_indicator_new)(const char *id, const char *icon_name, AppIndicatorCategory category) = NULL;
@@ -248,6 +249,26 @@ static void on_autostart_toggled(void *item, void *user_data) {
     set_autostart_enabled(active);
 }
 
+static void on_about_clicked(void *item, void *user_data) {
+    (void)item;
+    (void)user_data;
+    if (p_gtk_show_about_dialog) {
+        const char *authors[] = {"Kelvão", NULL};
+        p_gtk_show_about_dialog(
+            NULL,
+            "program-name", "Scarlett 2i2 Control",
+            "version", "1.0.0",
+            "comments", _("about_comments"),
+            "website", "https://github.com/Kelvao/Scarlett-Control",
+            "website-label", "GitHub Repository",
+            "logo-icon-name", "scarlett-control",
+            "authors", authors,
+            "license-type", 3 /* GTK_LICENSE_MIT_X11 */,
+            NULL
+        );
+    }
+}
+
 static void on_quit_clicked(void *item, void *user_data) {
     (void)item;
     (void)user_data;
@@ -331,6 +352,7 @@ int tray_init_and_run(scarlett_device_t *dev) {
     LOAD_SYM(gtk_lib, p_gtk_widget_set_sensitive, gtk_widget_set_sensitive);
     LOAD_SYM(gtk_lib, p_g_signal_connect_data, g_signal_connect_data);
     LOAD_SYM(gtk_lib, p_g_timeout_add, g_timeout_add);
+    *(void**)(&p_gtk_show_about_dialog) = dlsym(gtk_lib, "gtk_show_about_dialog");
 
     /* Initialize GTK without requiring command line args */
     int argc = 0;
@@ -437,6 +459,11 @@ int tray_init_and_run(scarlett_device_t *dev) {
     p_gtk_check_menu_item_set_active(item_autostart, is_autostart_enabled());
     p_g_signal_connect_data(item_autostart, "toggled", on_autostart_toggled, NULL, NULL, 0);
     p_gtk_menu_shell_append(menu, item_autostart);
+
+    /* About */
+    GtkWidget *item_about = p_gtk_menu_item_new_with_label(_("menu_about"));
+    p_g_signal_connect_data(item_about, "activate", on_about_clicked, NULL, NULL, 0);
+    p_gtk_menu_shell_append(menu, item_about);
 
     /* Quit */
     GtkWidget *item_quit = p_gtk_menu_item_new_with_label(_("Quit"));

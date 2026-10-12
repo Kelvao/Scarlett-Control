@@ -60,6 +60,7 @@ Focusrite Scarlett 2i2 (USB)
   (•) Direct Monitor: Stereo
 ─────────────────────────────
   [✓] Start with system
+  About
   Quit
 ```
 

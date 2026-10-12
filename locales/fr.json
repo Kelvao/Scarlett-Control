@@ -13,6 +13,8 @@
   "menu_mon_mono": "  Direct Monitor : Mono",
   "menu_mon_stereo": "  Direct Monitor : Stéréo",
   "menu_autostart": "  Démarrer avec le système",
+  "menu_about": "À propos",
+  "about_comments": "Contrôle matériel rapide et léger pour interfaces audio Focusrite Scarlett 2i2 sous Linux.",
   "menu_quit": "Quitter",
   
   "tray_started": "Démon de la barre d'état système démarré avec succès.",

@@ -13,6 +13,8 @@
   "menu_mon_mono": "  Direct Monitor: Mono",
   "menu_mon_stereo": "  Direct Monitor: Stereo",
   "menu_autostart": "  Mit dem System starten",
+  "menu_about": "Über",
+  "about_comments": "Schnelle, ressourcenschonende Hardware-Steuerung für Focusrite Scarlett 2i2 Audio-Interfaces unter Linux.",
   "menu_quit": "Beenden",
   
   "tray_started": "Systemleisten-Daemon erfolgreich gestartet.",
