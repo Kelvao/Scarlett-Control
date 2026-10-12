@@ -55,12 +55,15 @@ static void (*p_gtk_about_dialog_set_version)(void *dialog, const char *version)
 static void (*p_gtk_about_dialog_set_comments)(void *dialog, const char *comments) = NULL;
 static void (*p_gtk_about_dialog_set_website)(void *dialog, const char *website) = NULL;
 static void (*p_gtk_about_dialog_set_website_label)(void *dialog, const char *label) = NULL;
+static void (*p_gtk_about_dialog_set_logo)(void *dialog, void *pixbuf) = NULL;
 static void (*p_gtk_about_dialog_set_logo_icon_name)(void *dialog, const char *icon_name) = NULL;
 static void (*p_gtk_about_dialog_set_authors)(void *dialog, const char **authors) = NULL;
+static void (*p_gtk_about_dialog_set_license)(void *dialog, const char *license_text) = NULL;
 static void (*p_gtk_about_dialog_set_license_type)(void *dialog, int license_type) = NULL;
 static void (*p_gtk_window_set_position)(void *window, int position) = NULL;
 static void (*p_gtk_window_present)(void *window) = NULL;
 static void (*p_gtk_widget_destroy)(void *widget) = NULL;
+static void (*p_g_object_unref)(void *object) = NULL;
 
 /* AppIndicator pointers */
 static AppIndicator* (*p_app_indicator_new)(const char *id, const char *icon_name, AppIndicatorCategory category) = NULL;
@@ -291,16 +294,76 @@ static void on_about_clicked(void *item, void *user_data) {
     if (p_gtk_about_dialog_set_website_label) {
         p_gtk_about_dialog_set_website_label(dialog, "GitHub Repository");
     }
-    if (p_gtk_about_dialog_set_logo_icon_name) {
+    /* Load logo pixbuf if available */
+    void *pixbuf = NULL;
+    void *pixbuf_lib = dlopen("libgdk_pixbuf-2.0.so.0", RTLD_LAZY);
+    if (pixbuf_lib) {
+        void* (*p_gdk_pixbuf_new_from_file_at_scale)(const char*, int, int, int, void**) = 
+            dlsym(pixbuf_lib, "gdk_pixbuf_new_from_file_at_scale");
+        if (p_gdk_pixbuf_new_from_file_at_scale) {
+            const char *icon_paths[] = {
+                "assets/scarlett-control.svg",
+                "/usr/share/icons/hicolor/scalable/apps/scarlett-control.svg",
+                "/usr/local/share/icons/hicolor/scalable/apps/scarlett-control.svg"
+            };
+            for (size_t i = 0; i < sizeof(icon_paths) / sizeof(icon_paths[0]); i++) {
+                if (access(icon_paths[i], R_OK) == 0) {
+                    pixbuf = p_gdk_pixbuf_new_from_file_at_scale(icon_paths[i], 96, 96, 1, NULL);
+                    if (pixbuf) break;
+                }
+            }
+            if (!pixbuf) {
+                const char *home = getenv("HOME");
+                if (home) {
+                    char user_icon[512];
+                    snprintf(user_icon, sizeof(user_icon), "%s/.local/share/icons/hicolor/scalable/apps/scarlett-control.svg", home);
+                    if (access(user_icon, R_OK) == 0) {
+                        pixbuf = p_gdk_pixbuf_new_from_file_at_scale(user_icon, 96, 96, 1, NULL);
+                    }
+                }
+            }
+        }
+    }
+
+    if (pixbuf && p_gtk_about_dialog_set_logo) {
+        p_gtk_about_dialog_set_logo(dialog, pixbuf);
+        if (p_g_object_unref) p_g_object_unref(pixbuf);
+    } else if (p_gtk_about_dialog_set_logo_icon_name) {
         p_gtk_about_dialog_set_logo_icon_name(dialog, "scarlett-control");
     }
+
     if (p_gtk_about_dialog_set_authors) {
         const char *authors[] = {"Kelvão", NULL};
         p_gtk_about_dialog_set_authors(dialog, authors);
     }
+
+    /* License: MIT */
+    static const char mit_license[] =
+        "MIT License\n\n"
+        "Copyright (c) 2026 Kélvin Tesche Ievenes\n\n"
+        "Permission is hereby granted, free of charge, to any person obtaining a copy\n"
+        "of this software and associated documentation files (the \"Software\"), to deal\n"
+        "in the Software without restriction, including without limitation the rights\n"
+        "to use, copy, modify, merge, publish, distribute, sublicense, and/or sell\n"
+        "copies of the Software, and to permit persons to whom the Software is\n"
+        "furnished to do so, subject to the following conditions:\n\n"
+        "The above copyright notice and this permission notice shall be included in all\n"
+        "copies or substantial portions of the Software.\n\n"
+        "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR\n"
+        "IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,\n"
+        "FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE\n"
+        "AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER\n"
+        "LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,\n"
+        "OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE\n"
+        "SOFTWARE.";
+
     if (p_gtk_about_dialog_set_license_type) {
-        p_gtk_about_dialog_set_license_type(dialog, 3 /* GTK_LICENSE_MIT_X11 */);
+        p_gtk_about_dialog_set_license_type(dialog, 7 /* GTK_LICENSE_MIT_X11 */);
     }
+    if (p_gtk_about_dialog_set_license) {
+        p_gtk_about_dialog_set_license(dialog, mit_license);
+    }
+
     if (p_gtk_window_set_position) {
         p_gtk_window_set_position(dialog, 1 /* GTK_WIN_POS_CENTER */);
     }
@@ -408,12 +471,19 @@ int tray_init_and_run(scarlett_device_t *dev) {
     *(void**)(&p_gtk_about_dialog_set_comments) = dlsym(gtk_lib, "gtk_about_dialog_set_comments");
     *(void**)(&p_gtk_about_dialog_set_website) = dlsym(gtk_lib, "gtk_about_dialog_set_website");
     *(void**)(&p_gtk_about_dialog_set_website_label) = dlsym(gtk_lib, "gtk_about_dialog_set_website_label");
+    *(void**)(&p_gtk_about_dialog_set_logo) = dlsym(gtk_lib, "gtk_about_dialog_set_logo");
     *(void**)(&p_gtk_about_dialog_set_logo_icon_name) = dlsym(gtk_lib, "gtk_about_dialog_set_logo_icon_name");
     *(void**)(&p_gtk_about_dialog_set_authors) = dlsym(gtk_lib, "gtk_about_dialog_set_authors");
+    *(void**)(&p_gtk_about_dialog_set_license) = dlsym(gtk_lib, "gtk_about_dialog_set_license");
     *(void**)(&p_gtk_about_dialog_set_license_type) = dlsym(gtk_lib, "gtk_about_dialog_set_license_type");
     *(void**)(&p_gtk_window_set_position) = dlsym(gtk_lib, "gtk_window_set_position");
     *(void**)(&p_gtk_window_present) = dlsym(gtk_lib, "gtk_window_present");
     *(void**)(&p_gtk_widget_destroy) = dlsym(gtk_lib, "gtk_widget_destroy");
+    *(void**)(&p_g_object_unref) = dlsym(gtk_lib, "g_object_unref");
+    if (!p_g_object_unref) {
+        void *gobj_lib = dlopen("libgobject-2.0.so.0", RTLD_LAZY);
+        if (gobj_lib) *(void**)(&p_g_object_unref) = dlsym(gobj_lib, "g_object_unref");
+    }
 
     /* Initialize GTK without requiring command line args */
     int argc = 0;
