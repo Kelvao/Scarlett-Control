@@ -24,16 +24,31 @@ echo "X-AppImage-Version=${VERSION}" >> "${APP_DIR}/usr/share/applications/scarl
 
 # Create AppStream metainfo for software centers & Gear Lever
 mkdir -p "${APP_DIR}/usr/share/metainfo"
-cat <<EOF > "${APP_DIR}/usr/share/metainfo/scarlett-control.appdata.xml"
+cat <<EOF > "${APP_DIR}/usr/share/metainfo/io.github.kelvao.scarlett-control.metainfo.xml"
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>scarlett-control</id>
-  <name>Scarlett 2i2 Control</name>
-  <summary>Hardware control and system tray for Focusrite Scarlett 2i2</summary>
+  <id>io.github.kelvao.scarlett-control</id>
   <metadata_license>MIT</metadata_license>
   <project_license>MIT</project_license>
+  <name>Scarlett 2i2 Control</name>
+  <summary>Hardware control and system tray for Focusrite Scarlett 2i2</summary>
+  <description>
+    <p>
+      High-performance, lightweight C utility and system tray indicator for Focusrite
+      Scarlett 2i2 audio interfaces on Linux. Controls input impedance, AIR boost,
+      Phantom Power (+48V), and direct monitoring modes.
+    </p>
+  </description>
+  <launchable type="desktop-id">scarlett-control.desktop</launchable>
   <url type="homepage">https://github.com/Kelvao/Scarlett-Control</url>
   <url type="bugtracker">https://github.com/Kelvao/Scarlett-Control/issues</url>
+  <developer id="io.github.kelvao">
+    <name>Kelvão</name>
+  </developer>
+  <provides>
+    <binary>scarlett-control</binary>
+  </provides>
+  <content_rating type="oars-1.1" />
 </component>
 EOF
 
