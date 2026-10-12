@@ -6,7 +6,7 @@ PREFIX ?= /usr/local
 BINDIR ?= $(PREFIX)/bin
 DATADIR ?= $(PREFIX)/share
 
-SRC = src/main.c src/scarlett_alsa.c src/tray.c src/cli_parse.c src/i18n.c src/autostart.c
+SRC = src/main.c src/scarlett_alsa.c src/tray.c src/cli_parse.c src/i18n.c src/autostart.c src/commands.c
 TARGET = scarlett-control
 TEST_BIN = test_parser
 
@@ -18,8 +18,8 @@ $(TARGET): $(SRC)
 test: $(TEST_BIN)
 	./$(TEST_BIN)
 
-$(TEST_BIN): test/test_parser.c src/cli_parse.c src/i18n.c src/autostart.c
-	$(CC) $(CFLAGS) test/test_parser.c src/cli_parse.c src/i18n.c src/autostart.c $(LDFLAGS) -o $(TEST_BIN)
+$(TEST_BIN): test/test_parser.c src/cli_parse.c src/i18n.c src/autostart.c src/commands.c src/scarlett_alsa.c src/tray.c
+	$(CC) $(CFLAGS) test/test_parser.c src/cli_parse.c src/i18n.c src/autostart.c src/commands.c src/scarlett_alsa.c src/tray.c $(LDFLAGS) -o $(TEST_BIN)
 
 clean:
 	rm -f $(TARGET) $(TEST_BIN)

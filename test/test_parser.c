@@ -7,6 +7,7 @@
 #include "../src/scarlett_alsa.h"
 #include "../src/i18n.h"
 #include "../src/autostart.h"
+#include "../src/commands.h"
 
 int main(void) {
     printf("[TEST] Executando testes unitários do parser CLI...\n");
@@ -175,6 +176,19 @@ int main(void) {
     snprintf(autostart_subdir, sizeof(autostart_subdir), "%s/autostart", tmp_dir);
     rmdir(autostart_subdir);
     rmdir(tmp_dir);
+
+    /* Testes de Command Dispatcher (SOLID: Open/Closed & Strategy) */
+    printf("[TEST] Executando testes unitários do Command Dispatcher...\n");
+    cmd_context_t ctx = {
+        .dev = NULL,
+        .argc = 1,
+        .argv = NULL,
+        .arg_idx = 1,
+        .json = 0
+    };
+    /* Comando desconhecido deve retornar -1 */
+    assert(dispatch_command("nonexistent_command_xyz", &ctx) == -1);
+    assert(dispatch_command(NULL, &ctx) == -1);
 
     printf("[TEST] Todos os testes unitários passaram com sucesso!\n");
     return 0;
