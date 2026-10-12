@@ -56,20 +56,22 @@ exec "${HERE}/usr/bin/scarlett-control" "$@"
 EOF
 chmod +x "${APP_DIR}/AppRun"
 
-# Download appimagetool if not present
+# Download and extract appimagetool if not present
 mkdir -p "${TARGET_DIR}"
 if ! command -v appimagetool >/dev/null 2>&1; then
-    echo "Baixando appimagetool..."
-    curl -fsSL -o /tmp/appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${ARCH}.AppImage"
-    chmod +x /tmp/appimagetool
-    TOOL="/tmp/appimagetool"
+    if [ ! -f /tmp/squashfs-root/AppRun ]; then
+        echo "Baixando appimagetool..."
+        curl -fsSL -o /tmp/appimagetool "https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-${ARCH}.AppImage"
+        chmod +x /tmp/appimagetool
+        (cd /tmp && ./appimagetool --appimage-extract)
+    fi
+    TOOL="/tmp/squashfs-root/AppRun"
 else
     TOOL="appimagetool"
 fi
 
 UPDATE_INFO="gh-releases-zsync|Kelvao|Scarlett-Control|latest|scarlett-control-*${ARCH}.AppImage.zsync"
 
-ARCH="${ARCH}" "${TOOL}" -u "${UPDATE_INFO}" --appimage-extract-and-run "${APP_DIR}" "${TARGET_DIR}/scarlett-control-${VERSION}-${ARCH}.AppImage" || \
 ARCH="${ARCH}" "${TOOL}" -u "${UPDATE_INFO}" "${APP_DIR}" "${TARGET_DIR}/scarlett-control-${VERSION}-${ARCH}.AppImage"
 
 rm -rf "${APP_DIR}"
