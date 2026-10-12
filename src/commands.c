@@ -109,28 +109,46 @@ int cmd_toggle_run(const cmd_context_t *ctx) {
     }
     const char *item = ctx->argv[ctx->arg_idx + 1];
     scarlett_device_t *dev = ctx->dev;
+    int ret = 0;
 
     if (strcasecmp(item, "inst1") == 0) {
-        scarlett_set_inst(dev, 1, !dev->state.inst1);
-        printf(_("input1_inst_toggled"), dev->state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
+        ret = scarlett_set_inst(dev, 1, !dev->state.inst1);
+        if (ret == 0) {
+            printf(_("input1_inst_toggled"), dev->state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
+        }
     } else if (strcasecmp(item, "air1") == 0) {
-        scarlett_set_air(dev, 1, !dev->state.air1);
-        printf(_("input1_air_toggled"), scarlett_onoff_str(dev->state.air1));
+        ret = scarlett_set_air(dev, 1, !dev->state.air1);
+        if (ret == 0) {
+            printf(_("input1_air_toggled"), scarlett_onoff_str(dev->state.air1));
+        }
     } else if (strcasecmp(item, "inst2") == 0) {
-        scarlett_set_inst(dev, 2, !dev->state.inst2);
-        printf(_("input2_inst_toggled"), dev->state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
+        ret = scarlett_set_inst(dev, 2, !dev->state.inst2);
+        if (ret == 0) {
+            printf(_("input2_inst_toggled"), dev->state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
+        }
     } else if (strcasecmp(item, "air2") == 0) {
-        scarlett_set_air(dev, 2, !dev->state.air2);
-        printf(_("input2_air_toggled"), scarlett_onoff_str(dev->state.air2));
+        ret = scarlett_set_air(dev, 2, !dev->state.air2);
+        if (ret == 0) {
+            printf(_("input2_air_toggled"), scarlett_onoff_str(dev->state.air2));
+        }
     } else if (strcasecmp(item, "48v") == 0) {
-        scarlett_set_48v(dev, !dev->state.p48v);
-        printf(_("power_48v_toggled"), scarlett_onoff_str(dev->state.p48v));
+        ret = scarlett_set_48v(dev, !dev->state.p48v);
+        if (ret == 0) {
+            printf(_("power_48v_toggled"), scarlett_onoff_str(dev->state.p48v));
+        }
     } else if (strcasecmp(item, "monitor") == 0 || strcasecmp(item, "output") == 0) {
         int next = (dev->state.direct_monitor + 1) % 3;
-        scarlett_set_direct_monitor(dev, next);
-        printf(_("monitor_toggled"), scarlett_monitor_str(dev->state.direct_monitor));
+        ret = scarlett_set_direct_monitor(dev, next);
+        if (ret == 0) {
+            printf(_("monitor_toggled"), scarlett_monitor_str(dev->state.direct_monitor));
+        }
     } else {
         fprintf(stderr, _("err_unknown_item"), item);
+        return 1;
+    }
+
+    if (ret < 0) {
+        fprintf(stderr, "Error communicating with Scarlett interface: %s (%d)\n", strerror(-ret), -ret);
         return 1;
     }
     return 0;
@@ -156,6 +174,7 @@ int cmd_set_run(const cmd_context_t *ctx) {
     optind = ctx->arg_idx + 1;
     int opt = 0, option_index = 0;
     int any_change = 0;
+    int has_error = 0;
     scarlett_device_t *dev = ctx->dev;
 
     while ((opt = getopt_long(ctx->argc, ctx->argv, "c:l:h", long_options, &option_index)) != -1) {
@@ -163,49 +182,67 @@ int cmd_set_run(const cmd_context_t *ctx) {
             case 1001: {
                 int val = parse_bool_val(optarg);
                 if (val >= 0) {
-                    scarlett_set_inst(dev, 1, val);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_inst1"), optarg);
+                    if (scarlett_set_inst(dev, 1, val) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_inst1"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 1002: {
                 int val = parse_bool_val(optarg);
                 if (val >= 0) {
-                    scarlett_set_air(dev, 1, val);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_air1"), optarg);
+                    if (scarlett_set_air(dev, 1, val) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_air1"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 1003: {
                 int val = parse_bool_val(optarg);
                 if (val >= 0) {
-                    scarlett_set_inst(dev, 2, val);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_inst2"), optarg);
+                    if (scarlett_set_inst(dev, 2, val) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_inst2"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 1004: {
                 int val = parse_bool_val(optarg);
                 if (val >= 0) {
-                    scarlett_set_air(dev, 2, val);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_air2"), optarg);
+                    if (scarlett_set_air(dev, 2, val) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_air2"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 1005: {
                 int val = parse_bool_val(optarg);
                 if (val >= 0) {
-                    scarlett_set_48v(dev, val);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_48v"), optarg);
+                    if (scarlett_set_48v(dev, val) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_48v"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 1006: {
                 int mode = parse_monitor_mode(optarg);
                 if (mode >= 0) {
-                    scarlett_set_direct_monitor(dev, mode);
-                    any_change = 1;
-                } else fprintf(stderr, _("err_invalid_monitor"), optarg);
+                    if (scarlett_set_direct_monitor(dev, mode) == 0) any_change = 1;
+                    else has_error = 1;
+                } else {
+                    fprintf(stderr, _("err_invalid_monitor"), optarg);
+                    has_error = 1;
+                }
                 break;
             }
             case 'c':
@@ -215,8 +252,13 @@ int cmd_set_run(const cmd_context_t *ctx) {
                 cmd_print_usage(ctx->argv[0]);
                 return 0;
             default:
+                has_error = 1;
                 break;
         }
+    }
+
+    if (has_error) {
+        return 1;
     }
 
     if (any_change) {
@@ -277,3 +319,4 @@ int dispatch_command(const char *name, const cmd_context_t *ctx) {
 
     return -1;
 }
+

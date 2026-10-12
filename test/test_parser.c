@@ -190,6 +190,18 @@ int main(void) {
     assert(dispatch_command("nonexistent_command_xyz", &ctx) == -1);
     assert(dispatch_command(NULL, &ctx) == -1);
 
+    /* Testar cmd_set_run com argumentos inválidos (deve retornar 1) */
+    char *invalid_set_argv[] = {"scarlett-control", "set", "--inst1", "invalid_value"};
+    cmd_context_t set_err_ctx = {
+        .dev = NULL,
+        .argc = 4,
+        .argv = invalid_set_argv,
+        .arg_idx = 1,
+        .json = 0
+    };
+    /* Sem dev conectado, deve retornar 1 */
+    assert(cmd_set_run(&set_err_ctx) == 1);
+
     printf("[TEST] Todos os testes unitários passaram com sucesso!\n");
     return 0;
 }

@@ -40,3 +40,4 @@ void cmd_print_status(const scarlett_device_t *dev, int json);
 void cmd_print_usage(const char *prog);
 
 #endif /* COMMANDS_H */
+
