@@ -110,21 +110,12 @@ static int is_autostart_enabled(void) {
     return (access(path, F_OK) == 0);
 }
 
-static void set_autostart_enabled(int enable) {
-    char path[1024];
-    if (get_autostart_path(path, sizeof(path)) != 0) return;
-
-    if (!enable) {
-        unlink(path);
-        return;
-    }
-
-    /* Ensure ~/.config and ~/.config/autostart exist */
+static void ensure_autostart_dir(void) {
     const char *config_home = getenv("XDG_CONFIG_HOME");
     char dir[1024];
     if (config_home && config_home[0]) {
-        snprintf(dir, sizeof(dir), "%s/autostart", config_home);
         mkdir(config_home, 0755);
+        snprintf(dir, sizeof(dir), "%s/autostart", config_home);
         mkdir(dir, 0755);
     } else {
         const char *home = getenv("HOME");
@@ -135,6 +126,18 @@ static void set_autostart_enabled(int enable) {
             mkdir(dir, 0755);
         }
     }
+}
+
+static void set_autostart_enabled(int enable) {
+    char path[1024];
+    if (get_autostart_path(path, sizeof(path)) != 0) return;
+
+    if (!enable) {
+        unlink(path);
+        return;
+    }
+
+    ensure_autostart_dir();
 
     /* Determine binary / AppImage path */
     char exec_cmd[2048];

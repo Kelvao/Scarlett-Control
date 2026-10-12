@@ -2,6 +2,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <strings.h>
 #include <unistd.h>
 #include <getopt.h>
 #include <signal.h>
@@ -25,7 +26,7 @@ static void print_usage(const char *prog) {
     printf("%s\n", _("usage_cmds_title"));
     printf("  tray                   %s\n", _("cmd_tray_desc"));
     printf("  status                 %s\n", _("cmd_status_desc"));
-    printf("  set [opções]           %s\n", _("cmd_set_desc"));
+    printf("  set [options]          %s\n", _("cmd_set_desc"));
     printf("  toggle <item>          %s\n", _("cmd_toggle_desc"));
     printf("  watch                  %s\n\n", _("cmd_watch_desc"));
     printf("%s\n", _("usage_opts_set_title"));
@@ -88,6 +89,152 @@ static void print_status(const scarlett_device_t *dev, int json) {
     printf("====================================================\n");
 }
 
+static int handle_toggle_cmd(scarlett_device_t *dev, int argc, char *argv[], int arg_idx) {
+    if (arg_idx + 1 >= argc) {
+        fprintf(stderr, "%s", _("err_specify_toggle"));
+        return 1;
+    }
+    const char *item = argv[arg_idx + 1];
+    if (strcasecmp(item, "inst1") == 0) {
+        scarlett_set_inst(dev, 1, !dev->state.inst1);
+        printf(_("Input 1 Inst toggled to: %s\n"), dev->state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
+    } else if (strcasecmp(item, "air1") == 0) {
+        scarlett_set_air(dev, 1, !dev->state.air1);
+        printf(_("Input 1 Air toggled to: %s\n"), scarlett_onoff_str(dev->state.air1));
+    } else if (strcasecmp(item, "inst2") == 0) {
+        scarlett_set_inst(dev, 2, !dev->state.inst2);
+        printf(_("Input 2 Inst toggled to: %s\n"), dev->state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
+    } else if (strcasecmp(item, "air2") == 0) {
+        scarlett_set_air(dev, 2, !dev->state.air2);
+        printf(_("Input 2 Air toggled to: %s\n"), scarlett_onoff_str(dev->state.air2));
+    } else if (strcasecmp(item, "48v") == 0) {
+        scarlett_set_48v(dev, !dev->state.p48v);
+        printf(_("Phantom Power (+48V) toggled to: %s\n"), scarlett_onoff_str(dev->state.p48v));
+    } else if (strcasecmp(item, "monitor") == 0 || strcasecmp(item, "output") == 0) {
+        int next = (dev->state.direct_monitor + 1) % 3;
+        scarlett_set_direct_monitor(dev, next);
+        printf(_("Direct Monitor toggled to: %s\n"), scarlett_monitor_str(dev->state.direct_monitor));
+    } else {
+        fprintf(stderr, _("Unknown item: %s. Use inst1, air1, inst2, air2, 48v or monitor.\n"), item);
+        return 1;
+    }
+    return 0;
+}
+
+static int handle_set_cmd(scarlett_device_t *dev, int argc, char *argv[], int arg_idx) {
+    static struct option long_options[] = {
+        {"inst1",   required_argument, 0, 1001},
+        {"air1",    required_argument, 0, 1002},
+        {"inst2",   required_argument, 0, 1003},
+        {"air2",    required_argument, 0, 1004},
+        {"48v",     required_argument, 0, 1005},
+        {"output",  required_argument, 0, 1006},
+        {"monitor", required_argument, 0, 1006},
+        {"card",    required_argument, 0, 'c'},
+        {"lang",    required_argument, 0, 'l'},
+        {"help",    no_argument,       0, 'h'},
+        {0, 0, 0, 0}
+    };
+
+    optind = arg_idx + 1;
+    int opt = 0, option_index = 0;
+    int any_change = 0;
+
+    while ((opt = getopt_long(argc, argv, "c:l:h", long_options, &option_index)) != -1) {
+        switch (opt) {
+            case 1001: {
+                int val = parse_bool_val(optarg);
+                if (val >= 0) {
+                    scarlett_set_inst(dev, 1, val);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid value for --inst1: '%s'\n"), optarg);
+                break;
+            }
+            case 1002: {
+                int val = parse_bool_val(optarg);
+                if (val >= 0) {
+                    scarlett_set_air(dev, 1, val);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid value for --air1: '%s'\n"), optarg);
+                break;
+            }
+            case 1003: {
+                int val = parse_bool_val(optarg);
+                if (val >= 0) {
+                    scarlett_set_inst(dev, 2, val);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid value for --inst2: '%s'\n"), optarg);
+                break;
+            }
+            case 1004: {
+                int val = parse_bool_val(optarg);
+                if (val >= 0) {
+                    scarlett_set_air(dev, 2, val);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid value for --air2: '%s'\n"), optarg);
+                break;
+            }
+            case 1005: {
+                int val = parse_bool_val(optarg);
+                if (val >= 0) {
+                    scarlett_set_48v(dev, val);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid value for --48v: '%s'\n"), optarg);
+                break;
+            }
+            case 1006: {
+                int mode = parse_monitor_mode(optarg);
+                if (mode >= 0) {
+                    scarlett_set_direct_monitor(dev, mode);
+                    any_change = 1;
+                } else fprintf(stderr, _("Invalid mode for output/monitor: '%s' (use: off, mono or stereo)\n"), optarg);
+                break;
+            }
+            case 'c':
+            case 'l':
+                break;
+            case 'h':
+                print_usage(argv[0]);
+                return 0;
+            default:
+                break;
+        }
+    }
+
+    if (any_change) {
+        printf(_("Settings updated successfully!\n\n"));
+        print_status(dev, 0);
+    } else {
+        printf(_("No changes requested. Use --help to see options.\n"));
+    }
+    return 0;
+}
+
+static int handle_watch_cmd(scarlett_device_t *dev) {
+    signal(SIGINT, sigint_handler);
+    signal(SIGTERM, sigint_handler);
+
+    scarlett_subscribe_events(dev);
+    printf(_("Monitoring hardware events in real time (Press Ctrl+C to exit)...\n"));
+    print_status(dev, 0);
+
+    struct pollfd pfd = { .fd = dev->ctl_fd, .events = POLLIN };
+    while (g_running) {
+        int pr = poll(&pfd, 1, 500);
+        if (pr > 0 && (pfd.revents & POLLIN)) {
+            int changed = 0;
+            scarlett_process_events(dev, NULL, &changed);
+            if (changed) {
+                printf(_("\n[Hardware Event Detected! New state:]\n"));
+                print_status(dev, 0);
+            }
+        }
+    }
+
+    printf(_("\nStopping monitoring.\n"));
+    return 0;
+}
+
 int main(int argc, char *argv[]) {
     const char *card_arg = NULL;
     const char *lang_arg = NULL;
@@ -107,6 +254,8 @@ int main(int argc, char *argv[]) {
             if (i + 1 < argc) {
                 card_arg = argv[++i];
             }
+        } else if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
+            command = "help";
         } else if (!command && argv[i][0] != '-') {
             command = argv[i];
             arg_idx = i;
@@ -115,14 +264,6 @@ int main(int argc, char *argv[]) {
 
     /* Initialize i18n subsystem (system locale or forced via flag / env) */
     i18n_init(lang_arg);
-
-    /* Check for help after initializing i18n so it prints in the correct language */
-    for (int i = 1; i < argc; i++) {
-        if (strcmp(argv[i], "-h") == 0 || strcmp(argv[i], "--help") == 0) {
-            print_usage(argv[0]);
-            return 0;
-        }
-    }
 
     if (command && (strcmp(command, "help") == 0 || strcmp(command, "--help") == 0 || strcmp(command, "-h") == 0)) {
         print_usage(argv[0]);
@@ -142,178 +283,27 @@ int main(int argc, char *argv[]) {
     if (!command) {
         const char *disp = getenv("DISPLAY");
         const char *wayland = getenv("WAYLAND_DISPLAY");
-        if (disp || wayland) {
-            command = "tray";
-        } else {
-            command = "status";
-        }
+        command = (disp || wayland) ? "tray" : "status";
     }
+
+    int exit_code = 0;
 
     if (strcmp(command, "status") == 0) {
         print_status(&dev, json_output);
-        scarlett_close(&dev);
-        return 0;
-    }
-
-    if (strcmp(command, "tray") == 0) {
+    } else if (strcmp(command, "tray") == 0) {
         ret = tray_init_and_run(&dev);
-        scarlett_close(&dev);
-        return ret == 0 ? 0 : 1;
+        exit_code = (ret == 0) ? 0 : 1;
+    } else if (strcmp(command, "toggle") == 0) {
+        exit_code = handle_toggle_cmd(&dev, argc, argv, arg_idx);
+    } else if (strcmp(command, "set") == 0) {
+        exit_code = handle_set_cmd(&dev, argc, argv, arg_idx);
+    } else if (strcmp(command, "watch") == 0) {
+        exit_code = handle_watch_cmd(&dev);
+    } else {
+        fprintf(stderr, _("Unknown command: '%s'. Use --help for help.\n"), command);
+        exit_code = 1;
     }
 
-    if (strcmp(command, "toggle") == 0) {
-        if (arg_idx + 1 >= argc) {
-            fprintf(stderr, "%s", _("err_specify_toggle"));
-            scarlett_close(&dev);
-            return 1;
-        }
-        const char *item = argv[arg_idx + 1];
-        if (strcasecmp(item, "inst1") == 0) {
-            scarlett_set_inst(&dev, 1, !dev.state.inst1);
-            printf(_("Input 1 Inst toggled to: %s\n"), dev.state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
-        } else if (strcasecmp(item, "air1") == 0) {
-            scarlett_set_air(&dev, 1, !dev.state.air1);
-            printf(_("Input 1 Air toggled to: %s\n"), scarlett_onoff_str(dev.state.air1));
-        } else if (strcasecmp(item, "inst2") == 0) {
-            scarlett_set_inst(&dev, 2, !dev.state.inst2);
-            printf(_("Input 2 Inst toggled to: %s\n"), dev.state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
-        } else if (strcasecmp(item, "air2") == 0) {
-            scarlett_set_air(&dev, 2, !dev.state.air2);
-            printf(_("Input 2 Air toggled to: %s\n"), scarlett_onoff_str(dev.state.air2));
-        } else if (strcasecmp(item, "48v") == 0) {
-            scarlett_set_48v(&dev, !dev.state.p48v);
-            printf(_("Phantom Power (+48V) toggled to: %s\n"), scarlett_onoff_str(dev.state.p48v));
-        } else if (strcasecmp(item, "monitor") == 0 || strcasecmp(item, "output") == 0) {
-            int next = (dev.state.direct_monitor + 1) % 3;
-            scarlett_set_direct_monitor(&dev, next);
-            printf(_("Direct Monitor toggled to: %s\n"), scarlett_monitor_str(dev.state.direct_monitor));
-        } else {
-            fprintf(stderr, _("Unknown item: %s. Use inst1, air1, inst2, air2, 48v or monitor.\n"), item);
-            scarlett_close(&dev);
-            return 1;
-        }
-        scarlett_close(&dev);
-        return 0;
-    }
-
-    if (strcmp(command, "set") == 0) {
-        static struct option long_options[] = {
-            {"inst1",   required_argument, 0, 1001},
-            {"air1",    required_argument, 0, 1002},
-            {"inst2",   required_argument, 0, 1003},
-            {"air2",    required_argument, 0, 1004},
-            {"48v",     required_argument, 0, 1005},
-            {"output",  required_argument, 0, 1006},
-            {"monitor", required_argument, 0, 1006},
-            {"card",    required_argument, 0, 'c'},
-            {"lang",    required_argument, 0, 'l'},
-            {"help",    no_argument,       0, 'h'},
-            {0, 0, 0, 0}
-        };
-
-        optind = arg_idx + 1;
-        int opt, option_index = 0;
-        int any_change = 0;
-
-        while ((opt = getopt_long(argc, argv, "c:l:h", long_options, &option_index)) != -1) {
-            switch (opt) {
-                case 1001: {
-                    int val = parse_bool_val(optarg);
-                    if (val >= 0) {
-                        scarlett_set_inst(&dev, 1, val);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid value for --inst1: '%s'\n"), optarg);
-                    break;
-                }
-                case 1002: {
-                    int val = parse_bool_val(optarg);
-                    if (val >= 0) {
-                        scarlett_set_air(&dev, 1, val);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid value for --air1: '%s'\n"), optarg);
-                    break;
-                }
-                case 1003: {
-                    int val = parse_bool_val(optarg);
-                    if (val >= 0) {
-                        scarlett_set_inst(&dev, 2, val);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid value for --inst2: '%s'\n"), optarg);
-                    break;
-                }
-                case 1004: {
-                    int val = parse_bool_val(optarg);
-                    if (val >= 0) {
-                        scarlett_set_air(&dev, 2, val);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid value for --air2: '%s'\n"), optarg);
-                    break;
-                }
-                case 1005: {
-                    int val = parse_bool_val(optarg);
-                    if (val >= 0) {
-                        scarlett_set_48v(&dev, val);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid value for --48v: '%s'\n"), optarg);
-                    break;
-                }
-                case 1006: {
-                    int mode = parse_monitor_mode(optarg);
-                    if (mode >= 0) {
-                        scarlett_set_direct_monitor(&dev, mode);
-                        any_change = 1;
-                    } else fprintf(stderr, _("Invalid mode for output/monitor: '%s' (use: off, mono or stereo)\n"), optarg);
-                    break;
-                }
-                case 'c': break;
-                case 'l': break;
-                case 'h':
-                    print_usage(argv[0]);
-                    scarlett_close(&dev);
-                    return 0;
-                default:
-                    break;
-            }
-        }
-
-        if (any_change) {
-            printf(_("Settings updated successfully!\n\n"));
-            print_status(&dev, 0);
-        } else {
-            printf(_("No changes requested. Use --help to see options.\n"));
-        }
-
-        scarlett_close(&dev);
-        return 0;
-    }
-
-    if (strcmp(command, "watch") == 0) {
-        signal(SIGINT, sigint_handler);
-        signal(SIGTERM, sigint_handler);
-
-        scarlett_subscribe_events(&dev);
-        printf(_("Monitoring hardware events in real time (Press Ctrl+C to exit)...\n"));
-        print_status(&dev, 0);
-
-        struct pollfd pfd = { .fd = dev.ctl_fd, .events = POLLIN };
-        while (g_running) {
-            int pr = poll(&pfd, 1, 500);
-            if (pr > 0 && (pfd.revents & POLLIN)) {
-                int changed = 0;
-                scarlett_process_events(&dev, NULL, &changed);
-                if (changed) {
-                    printf(_("\n[Hardware Event Detected! New state:]\n"));
-                    print_status(&dev, 0);
-                }
-            }
-        }
-
-        printf(_("\nStopping monitoring.\n"));
-        scarlett_close(&dev);
-        return 0;
-    }
-
-    fprintf(stderr, _("Unknown command: '%s'. Use --help for help.\n"), command);
     scarlett_close(&dev);
-    return 1;
+    return exit_code;
 }
