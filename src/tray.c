@@ -92,7 +92,7 @@ static GtkWidget *item_mon_mono = NULL;
 static GtkWidget *item_mon_stereo = NULL;
 static GtkWidget *item_autostart = NULL;
 
-static int get_autostart_path(char *buf, size_t buf_size) {
+int get_autostart_path(char *buf, size_t buf_size) {
     const char *config_home = getenv("XDG_CONFIG_HOME");
     if (config_home && config_home[0]) {
         snprintf(buf, buf_size, "%s/autostart/scarlett-control.desktop", config_home);
@@ -294,40 +294,45 @@ static void on_about_clicked(void *item, void *user_data) {
     if (p_gtk_about_dialog_set_website_label) {
         p_gtk_about_dialog_set_website_label(dialog, "GitHub Repository");
     }
-    /* Load logo pixbuf if available */
-    void *pixbuf = NULL;
-    void *pixbuf_lib = dlopen("libgdk_pixbuf-2.0.so.0", RTLD_LAZY);
-    if (pixbuf_lib) {
-        void* (*p_gdk_pixbuf_new_from_file_at_scale)(const char*, int, int, int, void**) = 
-            dlsym(pixbuf_lib, "gdk_pixbuf_new_from_file_at_scale");
-        if (p_gdk_pixbuf_new_from_file_at_scale) {
-            const char *icon_paths[] = {
-                "assets/scarlett-control.svg",
-                "/usr/share/icons/hicolor/scalable/apps/scarlett-control.svg",
-                "/usr/local/share/icons/hicolor/scalable/apps/scarlett-control.svg"
-            };
-            for (size_t i = 0; i < sizeof(icon_paths) / sizeof(icon_paths[0]); i++) {
-                if (access(icon_paths[i], R_OK) == 0) {
-                    pixbuf = p_gdk_pixbuf_new_from_file_at_scale(icon_paths[i], 96, 96, 1, NULL);
-                    if (pixbuf) break;
+    /* Load logo pixbuf once and cache it */
+    static void *s_cached_logo = NULL;
+    static int s_logo_tried = 0;
+
+    if (!s_logo_tried) {
+        s_logo_tried = 1;
+        void *pixbuf_lib = dlopen("libgdk_pixbuf-2.0.so.0", RTLD_LAZY);
+        if (pixbuf_lib) {
+            void* (*p_gdk_pixbuf_new_from_file_at_scale)(const char*, int, int, int, void**) = 
+                dlsym(pixbuf_lib, "gdk_pixbuf_new_from_file_at_scale");
+            if (p_gdk_pixbuf_new_from_file_at_scale) {
+                const char *icon_paths[] = {
+                    "assets/scarlett-control.svg",
+                    "/usr/share/icons/hicolor/scalable/apps/scarlett-control.svg",
+                    "/usr/local/share/icons/hicolor/scalable/apps/scarlett-control.svg"
+                };
+                for (size_t i = 0; i < sizeof(icon_paths) / sizeof(icon_paths[0]); i++) {
+                    if (access(icon_paths[i], R_OK) == 0) {
+                        s_cached_logo = p_gdk_pixbuf_new_from_file_at_scale(icon_paths[i], 96, 96, 1, NULL);
+                        if (s_cached_logo) break;
+                    }
                 }
-            }
-            if (!pixbuf) {
-                const char *home = getenv("HOME");
-                if (home) {
-                    char user_icon[512];
-                    snprintf(user_icon, sizeof(user_icon), "%s/.local/share/icons/hicolor/scalable/apps/scarlett-control.svg", home);
-                    if (access(user_icon, R_OK) == 0) {
-                        pixbuf = p_gdk_pixbuf_new_from_file_at_scale(user_icon, 96, 96, 1, NULL);
+                if (!s_cached_logo) {
+                    const char *home = getenv("HOME");
+                    if (home) {
+                        char user_icon[512];
+                        snprintf(user_icon, sizeof(user_icon), "%s/.local/share/icons/hicolor/scalable/apps/scarlett-control.svg", home);
+                        if (access(user_icon, R_OK) == 0) {
+                            s_cached_logo = p_gdk_pixbuf_new_from_file_at_scale(user_icon, 96, 96, 1, NULL);
+                        }
                     }
                 }
             }
+            dlclose(pixbuf_lib);
         }
     }
 
-    if (pixbuf && p_gtk_about_dialog_set_logo) {
-        p_gtk_about_dialog_set_logo(dialog, pixbuf);
-        if (p_g_object_unref) p_g_object_unref(pixbuf);
+    if (s_cached_logo && p_gtk_about_dialog_set_logo) {
+        p_gtk_about_dialog_set_logo(dialog, s_cached_logo);
     } else if (p_gtk_about_dialog_set_logo_icon_name) {
         p_gtk_about_dialog_set_logo_icon_name(dialog, "scarlett-control");
     }

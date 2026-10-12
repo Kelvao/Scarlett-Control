@@ -18,8 +18,8 @@ $(TARGET): $(SRC)
 test: $(TEST_BIN)
 	./$(TEST_BIN)
 
-$(TEST_BIN): test/test_parser.c src/cli_parse.c src/i18n.c
-	$(CC) $(CFLAGS) test/test_parser.c src/cli_parse.c src/i18n.c -o $(TEST_BIN)
+$(TEST_BIN): test/test_parser.c src/cli_parse.c src/i18n.c src/tray.c src/scarlett_alsa.c
+	$(CC) $(CFLAGS) test/test_parser.c src/cli_parse.c src/i18n.c src/tray.c src/scarlett_alsa.c $(LDFLAGS) -o $(TEST_BIN)
 
 clean:
 	rm -f $(TARGET) $(TEST_BIN)
