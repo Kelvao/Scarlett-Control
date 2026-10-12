@@ -22,6 +22,21 @@ cp scarlett-control.desktop "${APP_DIR}/usr/share/applications/scarlett-control.
 echo "X-AppImage-Version=${VERSION}" >> "${APP_DIR}/scarlett-control.desktop"
 echo "X-AppImage-Version=${VERSION}" >> "${APP_DIR}/usr/share/applications/scarlett-control.desktop"
 
+# Create AppStream metainfo for software centers & Gear Lever
+mkdir -p "${APP_DIR}/usr/share/metainfo"
+cat <<EOF > "${APP_DIR}/usr/share/metainfo/scarlett-control.appdata.xml"
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>scarlett-control</id>
+  <name>Scarlett 2i2 Control</name>
+  <summary>Hardware control and system tray for Focusrite Scarlett 2i2</summary>
+  <metadata_license>MIT</metadata_license>
+  <project_license>MIT</project_license>
+  <url type="homepage">https://github.com/Kelvao/Scarlett-Control</url>
+  <url type="bugtracker">https://github.com/Kelvao/Scarlett-Control/issues</url>
+</component>
+EOF
+
 cp assets/scarlett-control.svg "${APP_DIR}/scarlett-control.svg"
 cp assets/scarlett-control.svg "${APP_DIR}/.DirIcon"
 cp assets/scarlett-control.svg "${APP_DIR}/usr/share/icons/hicolor/scalable/apps/scarlett-control.svg"

@@ -22,3 +22,5 @@ Type=Application
 Categories=AudioVideo;Audio;Mixer;
 StartupNotify=false
 X-GNOME-Autostart-enabled=true
+URL=https://github.com/Kelvao/Scarlett-Control
+X-AppImage-URL=https://github.com/Kelvao/Scarlett-Control
