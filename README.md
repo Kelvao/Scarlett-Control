@@ -1,192 +1,247 @@
-# Scarlett 2i2 Control (Linux)
+# Scarlett Control
 
-Controle em C rápido, leve e sem dependências pesadas de desenvolvimento para a **Focusrite Scarlett 2i2** no Linux, baseado no funcionamento do [`alsa-scarlett-gui`](https://github.com/geoffreybennett/alsa-scarlett-gui) e no driver do kernel Linux (`mixer_scarlett2`).
+[![CI / Build & Release](https://github.com/Kelvao/Scarlett-Control/actions/workflows/build-and-release.yml/badge.svg)](https://github.com/Kelvao/Scarlett-Control/actions/workflows/build-and-release.yml)
+[![Release](https://img.shields.io/github/v/release/Kelvao/Scarlett-Control?include_prereleases&style=flat-square)](https://github.com/Kelvao/Scarlett-Control/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=flat-square)](LICENSE)
+[![Platform](https://img.shields.io/badge/Platform-Linux%20(x86__64%20%7C%20aarch64)-orange?style=flat-square)](#)
 
-Controla exatamente o que você precisa:
-* **Entradas (Input 1 e Input 2):**
-  * Nível de Impedância: **Line** (Linha) ou **Inst** (Instrumento)
-  * Modo **AIR** (Boost de presença Focusrite)
-* **Alimentação Fantasma:**
-  * **+48V Phantom Power** para microfones condensadores
-* **Saída / Monitoramento (Direct Monitor):**
-  * **Off** (Desligado / áudio apenas do PC)
-  * **Mono** (Soma as entradas para ambos os canais de fone/monitor)
-  * **Stereo** (Entrada 1 no canal esquerdo, Entrada 2 no canal direito)
-* **Bandeja do Sistema (System Tray):**
-  * Ícone na system tray (KDE Plasma, GNOME via AppIndicator, XFCE, etc.)
-  * Menus com checkboxes e radio buttons intuitivos
-  * **Sincronização em tempo real com o hardware físico:** se você apertar o botão físico na Scarlett 2i2, a bandeja atualiza o estado imediatamente via eventos ALSA do kernel (`SNDRV_CTL_IOCTL_SUBSCRIBE_EVENTS`).
+A high-performance, lightweight, zero-dependency C utility and system tray indicator for **Focusrite Scarlett 2i2** audio interfaces on Linux. 
+
+Built on direct Linux kernel ALSA ioctl interfaces (`mixer_scarlett2`), **Scarlett Control** operates without bulky development dependencies, runtime bloat, or background CPU overhead.
 
 ---
 
-## 🚀 Compilação
+## Key Features
 
-O projeto foi projetado para compilar em **qualquer ambiente Linux** sem exigir pacotes `-devel` pesados (como `libasound-dev`, `libgtk-3-dev` ou `libappindicator-dev`). Ele utiliza os headers padrão do kernel (`<sound/asound.h>`) e carrega as bibliotecas da interface gráfica dinamicamente em tempo de execução via `dlopen`.
+* **Hardware Input Control:**
+  * **Impedance Level:** Toggle between **Line** and **Inst** (Instrument) per channel (Input 1 & Input 2).
+  * **AIR Mode:** Engage Focusrite's proprietary analog AIR presence boost per channel.
+* **Phantom Power (+48V):**
+  * Dedicated toggle for condenser microphones.
+* **Direct Monitoring:**
+  * Select between **Off** (host playback only), **Mono** (summed to both channels), and **Stereo** (Input 1 Left, Input 2 Right).
+* **System Tray & Desktop Integration:**
+  * Native system tray indicator compatible with KDE Plasma, GNOME (via AppIndicator / KStatusNotifierItem), XFCE, and other standard desktop environments.
+  * **Start with system** toggle directly from the tray menu (creates/removes standard XDG autostart entries).
+  * **Real-time Hardware Synchronization:** Hardware button presses and knob toggles on the physical Scarlett 2i2 reflect immediately in the tray menu via kernel ALSA event subscription (`SNDRV_CTL_IOCTL_SUBSCRIBE_EVENTS`).
+* **Zero Runtime Overhead & Dynamic Linkage:**
+  * Written in clean, standard C with zero external runtime requirements.
+  * GUI libraries (`libgtk-3` / `libayatana-appindicator3` / `libappindicator3`) are loaded dynamically via `dlopen()`. In headless or pure CLI mode, GUI libraries are never initialized.
+* **First-Class AppImage & Gear Lever Support:**
+  * Self-contained AppImage builds with embedded update metadata (`gh-releases-zsync`) for seamless automatic updates with [Gear Lever](https://github.com/mijorus/gearlever) and AppImagePool.
+* **Full CLI Suite:**
+  * Comprehensive CLI commands (`status`, `set`, `toggle`, `watch`) with JSON export capability for scripts, window managers (Hyprland, Sway, i3), and keyboard shortcut daemon integration.
+* **Multi-Language Support (i18n):**
+  * Auto-detects system locale across 8 languages with embedded fallbacks and runtime overrides.
 
-Para compilar, basta rodar:
+---
+
+## System Tray Overview
+
+When launched, the indicator stays active in your system tray:
+
+```
+Focusrite Scarlett 2i2 (USB)
+─────────────────────────────
+[ Input 1 ]
+  [✓] Inst (Instrument)
+  [ ] Air Mode
+─────────────────────────────
+[ Input 2 ]
+  [ ] Inst (Instrument)
+  [✓] Air Mode
+─────────────────────────────
+[ Power ]
+  [✓] +48V Phantom Power
+─────────────────────────────
+[ Output (Direct Monitor) ]
+  ( ) Direct Monitor: Off
+  ( ) Direct Monitor: Mono
+  (•) Direct Monitor: Stereo
+─────────────────────────────
+  [✓] Start with system
+  Quit
+```
+
+---
+
+## Installation & Packaging
+
+Precompiled packages are available on the [Releases](https://github.com/Kelvao/Scarlett-Control/releases) page for every release:
+
+### 1. AppImage (Universal Linux - Recommended)
+Compatible with any modern Linux distribution:
+```bash
+chmod +x scarlett-control-x86_64.AppImage
+./scarlett-control-x86_64.AppImage
+```
+> **Tip:** If you use **Gear Lever**, simply open the AppImage with Gear Lever to automatically integrate desktop shortcuts, icons, and GitHub one-click updates.
+
+### 2. Debian / Ubuntu / Linux Mint / Pop!_OS (`.deb`)
+```bash
+sudo dpkg -i scarlett-control_*_amd64.deb
+# or for ARM64:
+sudo dpkg -i scarlett-control_*_arm64.deb
+```
+
+### 3. Fedora / RHEL / openSUSE / Bazzite (`.rpm`)
+```bash
+sudo rpm -i scarlett-control-*.x86_64.rpm
+# or for aarch64:
+sudo rpm -i scarlett-control-*.aarch64.rpm
+```
+
+### 4. Arch Linux / Manjaro / SteamOS
+A standalone recipe is available in `packaging/arch/PKGBUILD`:
+```bash
+cd packaging/arch
+makepkg -si
+```
+
+---
+
+## Building from Source
+
+The build system requires only standard GCC/Clang, `make`, and standard C library headers. No GUI development packages (`-dev`/`-devel`) are required.
 
 ```bash
-cd scarlett-control
+git clone https://github.com/Kelvao/Scarlett-Control.git
+cd Scarlett-Control
 make
 ```
 
-Isso gera o binário executável `scarlett-control` em segundos.
-
----
-
-## 🖥️ Uso na System Tray (Bandeja do Sistema)
-
-Para iniciar o controle na bandeja do sistema:
-
-```bash
-./scarlett-control tray
-```
-
-*(Se executado sem argumentos em um ambiente gráfico X11 ou Wayland, o modo `tray` é iniciado automaticamente).*
-
-### Menu da Bandeja:
-* **[ Input 1 ]**
-  * ☑️ Inst (Instrument)
-  * ☑️ Air Mode
-* **[ Input 2 ]**
-  * ☑️ Inst (Instrument)
-  * ☑️ Air Mode
-* **[ Power ]**
-  * ☑️ +48V Phantom Power
-* **[ Output (Direct Monitor) ]**
-  * 🔘 Direct Monitor: Off
-  * 🔘 Direct Monitor: Mono
-  * 🔘 Direct Monitor: Stereo
-* ❌ Sair (Quit)
-
----
-
-## ⌨️ Uso via Linha de Comando (CLI & Scripts)
-
-Você também pode consultar e alterar qualquer parâmetro diretamente pelo terminal, ideal para atalhos de teclado (ex: no KDE Shortcuts ou Sway/Hyprland) ou automações:
-
-### 1. Ver status atual:
-```bash
-./scarlett-control status
-```
-Ou com saída JSON:
-```bash
-./scarlett-control status --json
-```
-
-### 2. Alterar configurações (`set`):
-```bash
-# Ativar Instrumento e Air na entrada 1, 48V ligado e Direct Monitor em Stereo:
-./scarlett-control set --inst1 on --air1 on --48v on --output stereo
-
-# Mudar monitoramento para mono:
-./scarlett-control set --output mono
-
-# Desligar 48V:
-./scarlett-control set --48v off
-```
-
-### 3. Alternar estados (`toggle`):
-Excelente para vincular a teclas de atalho:
-```bash
-./scarlett-control toggle air1      # Alterna Air na entrada 1 (on/off)
-./scarlett-control toggle inst1     # Alterna Inst na entrada 1
-./scarlett-control toggle air2      # Alterna Air na entrada 2
-./scarlett-control toggle inst2     # Alterna Inst na entrada 2
-./scarlett-control toggle 48v       # Alterna 48V Phantom Power
-./scarlett-control toggle monitor   # Cicla entre Off -> Mono -> Stereo -> Off
-```
-
-### 4. Monitorar eventos do hardware em tempo real (`watch`):
-Exibe o estado e atualiza instantaneamente quando você aperta qualquer botão físico na placa de áudio:
-```bash
-./scarlett-control watch
-```
-
----
-
-## 🌐 Internacionalização (i18n Multi-Idiomas)
-
-O `scarlett-control` detecta automaticamente o idioma da sua sessão Linux através das variáveis de ambiente (`LANG`, `LC_MESSAGES`, `LC_ALL`) ou permite selecionar manualmente qualquer idioma suportado:
-
-| Código | Idioma | Arquivo de Tradução |
-|:---:|:---|:---|
-| `en` | Inglês (*English*) | `locales/en.json` |
-| `pt` | Português do Brasil | `locales/pt_BR.json` |
-| `es` | Espanhol (*Español*) | `locales/es.json` |
-| `fr` | Francês (*Français*) | `locales/fr.json` |
-| `de` | Alemão (*Deutsch*) | `locales/de.json` |
-| `it` | Italiano (*Italiano*) | `locales/it.json` |
-| `ja` | Japonês (*日本語*) | `locales/ja.json` |
-| `zh` | Chinês Simplificado (*简体中文*) | `locales/zh_CN.json` |
-
-Você pode definir o idioma manualmente tanto na CLI quanto na System Tray:
-
-* **Via parâmetro de linha de comando (`-l` / `--lang`):**
-  ```bash
-  ./scarlett-control --lang es status    # Força espanhol
-  ./scarlett-control --lang fr status    # Força francês
-  ./scarlett-control --lang de status    # Força alemão
-  ./scarlett-control --lang ja status    # Força japonês
-  ./scarlett-control --lang zh status    # Força chinês
-  ./scarlett-control -l pt tray          # Inicia bandeja em português
-  ```
-
-* **Via variável de ambiente (`SCARLETT_LANG`):**
-  ```bash
-  export SCARLETT_LANG=es
-  ./scarlett-control status
-  ```
-
----
-
-## 📦 Instalação no Sistema
-
-### Instalação para o usuário atual (recomendado):
+### Installation Targets
+To install for the current user (`~/.local/bin` and `~/.local/share/applications`):
 ```bash
 make install-user
 ```
-Isso instala:
-* O executável em `~/.local/bin/scarlett-control`
-* O atalho no lançador de aplicativos (`~/.local/share/applications/scarlett-control.desktop`)
-* O autostart para iniciar automaticamente ao fazer login (`~/.config/autostart/scarlett-control.desktop`)
 
-### Instalação global:
+To install globally for all users (`/usr/local/bin`):
 ```bash
 sudo make install
 ```
-Instala em `/usr/local/bin` e `/usr/local/share/applications`.
+
+To remove a previously installed local version:
+```bash
+make uninstall-user
+```
 
 ---
 
-## 🔍 Como funciona a comunicação ALSA
+## Command-Line Interface (CLI)
 
-Diferente de interfaces genéricas, a linha Focusrite Scarlett (Gen 2, 3 e 4) expõe controles de mixer ALSA especializados criados pelo módulo `sound/usb/mixer_scarlett2.c`. O `scarlett-control`:
-1. Faz a varredura automática dos dispositivos de controle `/dev/snd/controlC*`.
-2. Identifica o hardware correspondente à Scarlett 2i2.
-3. Lê e altera os numids de controle (`Line In Level`, `Air Capture`, `Phantom Power`, `Direct Monitor`).
-4. Subscreve à fila de eventos ALSA do kernel para refletir mudanças do hardware na interface imediatamente.
+The CLI interface allows instant status inspection and seamless hardware control without opening the tray menu.
+
+### Query Hardware Status
+
+* **Human-readable overview:**
+  ```bash
+  scarlett-control status
+  ```
+
+* **Machine-readable JSON output (ideal for status bars like Waybar, Polybar, or scripts):**
+  ```bash
+  scarlett-control status --json
+  ```
+  ```json
+  {
+    "card_id": "USB",
+    "card_index": 2,
+    "input1": { "inst": true, "air": false },
+    "input2": { "inst": false, "air": true },
+    "phantom_48v": true,
+    "direct_monitor": "stereo"
+  }
+  ```
+
+### Change Hardware Settings (`set`)
+
+Update one or more parameters in a single invocation:
+```bash
+# Enable Instrument and Air on Input 1, turn on 48V, and set Monitor to Stereo:
+scarlett-control set --inst1 on --air1 on --48v on --output stereo
+
+# Switch Direct Monitoring to Mono:
+scarlett-control set --output mono
+
+# Disable Phantom Power:
+scarlett-control set --48v off
+```
+
+### Toggle Controls (`toggle`)
+
+Designed for binding to global desktop shortcuts (e.g., KDE Shortcuts, GNOME Custom Shortcuts, Hyprland, Sway, or i3):
+```bash
+scarlett-control toggle air1      # Toggle Air mode on Input 1
+scarlett-control toggle inst1     # Toggle Instrument mode on Input 1
+scarlett-control toggle air2      # Toggle Air mode on Input 2
+scarlett-control toggle inst2     # Toggle Instrument mode on Input 2
+scarlett-control toggle 48v       # Toggle +48V Phantom Power
+scarlett-control toggle monitor   # Cycle Monitor: Off -> Mono -> Stereo -> Off
+```
+
+### Real-Time Event Monitor (`watch`)
+
+Listen directly to ALSA kernel events and display real-time updates when hardware buttons or knobs are physically toggled:
+```bash
+scarlett-control watch
+```
 
 ---
 
-## 🤖 Esteira de Integração Contínua (GitHub Actions)
+## Internationalization (i18n)
 
-O projeto inclui uma pipeline automatizada no GitHub Actions (`.github/workflows/build-and-release.yml`) que:
+**Scarlett Control** automatically detects your active session language using standard environment variables (`LANG`, `LC_MESSAGES`, `LC_ALL`). If no translation files are present on disk, it falls back gracefully to embedded internal defaults.
 
-1. **Testa a compilação em múltiplas distros:**
-   - Ubuntu Latest
-   - Debian Stable
-   - Fedora Latest
-   - Arch Linux
-   - Alpine Linux (musl)
+| Code | Language | Translation File |
+|:---:|:---|:---|
+| `en` | English | `locales/en.json` |
+| `pt` / `pt_BR` | Português (Brasil) | `locales/pt_BR.json` |
+| `es` | Español | `locales/es.json` |
+| `fr` | Français | `locales/fr.json` |
+| `de` | Deutsch | `locales/de.json` |
+| `it` | Italiano | `locales/it.json` |
+| `ja` | 日本語 | `locales/ja.json` |
+| `zh` / `zh_CN` | 简体中文 | `locales/zh_CN.json` |
 
-2. **Gera pacotes e binários portáveis para todas as distribuições Linux:**
-   - **`.AppImage` (Universal):** Executável autossuficiente compatível com qualquer distribuição Linux sem necessidade de instalação.
-   - **`.deb`:** Pacote Debian/Ubuntu/Mint/Pop!_OS (`amd64` e `arm64`).
-   - **`.rpm`:** Pacote Fedora/RHEL/CentOS/openSUSE/Bazzite (`x86_64` e `aarch64`).
-   - **`.tar.gz`:** Arquivo portável com o binário compilado, ícone, arquivo `.desktop` e script `install.sh`.
-   - **`PKGBUILD`:** Receita oficial para Arch Linux / Manjaro / SteamOS localizada em `packaging/arch/PKGBUILD`.
+You can force a specific language at runtime via CLI or environment variable:
 
-3. **Publicação Automática de Releases:**
-   - Sempre que uma tag `v*` é criada (ex: `git tag v1.0.0 && git push --tags`) ou uma release é publicada no GitHub, a esteira anexa automaticamente todos os pacotes e o arquivo `SHA256SUMS.txt` aos Assets da Release!
+```bash
+# Via command-line argument:
+scarlett-control --lang de status
+scarlett-control -l pt tray
 
+# Via environment variable:
+export SCARLETT_LANG=es
+scarlett-control status
+```
+
+---
+
+## Technical Architecture
+
+Traditional GUI tools often depend on heavyweight graphical stacks and runtime interpreters. **Scarlett Control** is engineered with a minimalist systems-programming approach:
+
+1. **Direct ALSA Kernel Interface:**
+   Communicates directly with the Linux kernel's `sound/usb/mixer_scarlett2.c` driver via raw `ioctl` syscalls on `/dev/snd/controlC*`. No dependence on external sound server abstractions.
+2. **Zero Polling CPU Waste:**
+   Utilizes ALSA kernel event notifications via `SNDRV_CTL_IOCTL_SUBSCRIBE_EVENTS`. State synchronization occurs asynchronously without waking the CPU when idle.
+3. **Dynamic Library Loading (`dlopen`):**
+   GTK3 and AppIndicator libraries are resolved dynamically at runtime. If running in a headless server or purely via the CLI, graphical libraries are never loaded into memory.
+4. **Resilient Reconnection:**
+   If the audio interface is disconnected (unplugged USB cable or audio reset), the tray daemon remains stable and automatically re-establishes connection once the hardware is reattached.
+
+---
+
+## Continuous Integration & Release Automation
+
+Every commit and pull request is verified via [GitHub Actions](https://github.com/Kelvao/Scarlett-Control/actions):
+* **Cross-Distribution Compilation Tests:** Ubuntu, Debian, Fedora, Arch Linux, and Alpine Linux (`musl`).
+* **Multi-Architecture Packaging:** Automated generation of `x86_64` and `aarch64` binaries, AppImages, Debian packages (`.deb`), Red Hat packages (`.rpm`), and tarballs.
+* **Release Delivery:** Automated signing, checksum generation (`SHA256SUMS.txt`), and asset attachment upon tag creation.
+
+---
+
+## License
+
+This project is open-source software licensed under the [MIT License](LICENSE).
