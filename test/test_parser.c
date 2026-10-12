@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <assert.h>
 #include "../src/cli_parse.h"
 #include "../src/scarlett_alsa.h"
@@ -139,6 +140,41 @@ int main(void) {
     unsetenv("XDG_CONFIG_HOME");
     assert(autostart_get_path(autostart_buf, sizeof(autostart_buf)) == 0);
     assert(strcmp(autostart_buf, "/custom/home/.config/autostart/scarlett-control.desktop") == 0);
+
+    /* Caso 4: Ciclo de vida completo (enable / verify / disable) */
+    char tmp_template[] = "/tmp/scarlett_autostart_test_XXXXXX";
+    char *tmp_dir = mkdtemp(tmp_template);
+    assert(tmp_dir != NULL);
+
+    setenv("XDG_CONFIG_HOME", tmp_dir, 1);
+    assert(autostart_is_enabled() == 0);
+
+    /* Habilitar autostart */
+    assert(autostart_set_enabled(1) == 0);
+    assert(autostart_is_enabled() == 1);
+
+    /* Verificar arquivo criado e conteúdo */
+    char test_path[1024];
+    assert(autostart_get_path(test_path, sizeof(test_path)) == 0);
+    FILE *af = fopen(test_path, "r");
+    assert(af != NULL);
+    char line_buf[256];
+    int found_entry = 0;
+    while (fgets(line_buf, sizeof(line_buf), af)) {
+        if (strstr(line_buf, "[Desktop Entry]")) found_entry = 1;
+    }
+    fclose(af);
+    assert(found_entry == 1);
+
+    /* Desabilitar autostart */
+    assert(autostart_set_enabled(0) == 0);
+    assert(autostart_is_enabled() == 0);
+
+    /* Limpeza do diretório temporário */
+    char autostart_subdir[1024];
+    snprintf(autostart_subdir, sizeof(autostart_subdir), "%s/autostart", tmp_dir);
+    rmdir(autostart_subdir);
+    rmdir(tmp_dir);
 
     printf("[TEST] Todos os testes unitários passaram com sucesso!\n");
     return 0;

@@ -16,3 +16,4 @@ int autostart_is_enabled(void);
 int autostart_set_enabled(int enable);
 
 #endif /* AUTOSTART_H */
+

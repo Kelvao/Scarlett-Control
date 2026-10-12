@@ -91,3 +91,4 @@ int autostart_set_enabled(int enable) {
     fclose(f);
     return 0;
 }
+

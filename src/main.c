@@ -97,25 +97,25 @@ static int handle_toggle_cmd(scarlett_device_t *dev, int argc, char *argv[], int
     const char *item = argv[arg_idx + 1];
     if (strcasecmp(item, "inst1") == 0) {
         scarlett_set_inst(dev, 1, !dev->state.inst1);
-        printf(_("Input 1 Inst toggled to: %s\n"), dev->state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
+        printf(_("input1_inst_toggled"), dev->state.inst1 ? _("INST (Instrument)") : _("LINE (Line)"));
     } else if (strcasecmp(item, "air1") == 0) {
         scarlett_set_air(dev, 1, !dev->state.air1);
-        printf(_("Input 1 Air toggled to: %s\n"), scarlett_onoff_str(dev->state.air1));
+        printf(_("input1_air_toggled"), scarlett_onoff_str(dev->state.air1));
     } else if (strcasecmp(item, "inst2") == 0) {
         scarlett_set_inst(dev, 2, !dev->state.inst2);
-        printf(_("Input 2 Inst toggled to: %s\n"), dev->state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
+        printf(_("input2_inst_toggled"), dev->state.inst2 ? _("INST (Instrument)") : _("LINE (Line)"));
     } else if (strcasecmp(item, "air2") == 0) {
         scarlett_set_air(dev, 2, !dev->state.air2);
-        printf(_("Input 2 Air toggled to: %s\n"), scarlett_onoff_str(dev->state.air2));
+        printf(_("input2_air_toggled"), scarlett_onoff_str(dev->state.air2));
     } else if (strcasecmp(item, "48v") == 0) {
         scarlett_set_48v(dev, !dev->state.p48v);
-        printf(_("Phantom Power (+48V) toggled to: %s\n"), scarlett_onoff_str(dev->state.p48v));
+        printf(_("power_48v_toggled"), scarlett_onoff_str(dev->state.p48v));
     } else if (strcasecmp(item, "monitor") == 0 || strcasecmp(item, "output") == 0) {
         int next = (dev->state.direct_monitor + 1) % 3;
         scarlett_set_direct_monitor(dev, next);
-        printf(_("Direct Monitor toggled to: %s\n"), scarlett_monitor_str(dev->state.direct_monitor));
+        printf(_("monitor_toggled"), scarlett_monitor_str(dev->state.direct_monitor));
     } else {
-        fprintf(stderr, _("Unknown item: %s. Use inst1, air1, inst2, air2, 48v or monitor.\n"), item);
+        fprintf(stderr, _("err_unknown_item"), item);
         return 1;
     }
     return 0;
@@ -202,10 +202,10 @@ static int handle_set_cmd(scarlett_device_t *dev, int argc, char *argv[], int ar
     }
 
     if (any_change) {
-        printf(_("Settings updated successfully!\n\n"));
+        printf("%s", _("settings_updated"));
         print_status(dev, 0);
     } else {
-        printf(_("No changes requested. Use --help to see options.\n"));
+        printf("%s", _("no_changes"));
     }
     return 0;
 }
@@ -215,7 +215,7 @@ static int handle_watch_cmd(scarlett_device_t *dev) {
     signal(SIGTERM, sigint_handler);
 
     scarlett_subscribe_events(dev);
-    printf(_("Monitoring hardware events in real time (Press Ctrl+C to exit)...\n"));
+    printf("%s", _("watch_starting"));
     print_status(dev, 0);
 
     struct pollfd pfd = { .fd = dev->ctl_fd, .events = POLLIN };
@@ -225,13 +225,13 @@ static int handle_watch_cmd(scarlett_device_t *dev) {
             int changed = 0;
             scarlett_process_events(dev, NULL, &changed);
             if (changed) {
-                printf(_("\n[Hardware Event Detected! New state:]\n"));
+                printf("%s", _("watch_event"));
                 print_status(dev, 0);
             }
         }
     }
 
-    printf(_("\nStopping monitoring.\n"));
+    printf("%s", _("watch_stopping"));
     return 0;
 }
 
@@ -274,8 +274,8 @@ int main(int argc, char *argv[]) {
     scarlett_device_t dev;
     int ret = scarlett_open(&dev, card_arg);
     if (ret < 0) {
-        fprintf(stderr, _("Error opening Focusrite Scarlett 2i2 device: %s (%d)\n"), strerror(-ret), -ret);
-        fprintf(stderr, _("Please check if interface is connected and user has permission to access /dev/snd/controlC*\n"));
+        fprintf(stderr, _("err_open_device"), strerror(-ret), -ret);
+        fprintf(stderr, "%s", _("err_check_device"));
         return 1;
     }
 
@@ -300,7 +300,7 @@ int main(int argc, char *argv[]) {
     } else if (strcmp(command, "watch") == 0) {
         exit_code = handle_watch_cmd(&dev);
     } else {
-        fprintf(stderr, _("Unknown command: '%s'. Use --help for help.\n"), command);
+        fprintf(stderr, _("err_unknown_cmd"), command);
         exit_code = 1;
     }
 

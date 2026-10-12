@@ -1,10 +1,8 @@
-#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <dlfcn.h>
 #include <unistd.h>
-#include <sys/stat.h>
 
 #include "tray.h"
 #include "autostart.h"
@@ -370,6 +368,7 @@ int tray_init_and_run(scarlett_device_t *dev) {
         *(void**)(&(p)) = dlsym(lib, #name); \
         if (!(p)) { \
             fprintf(stderr, "Error resolving symbol %s: %s\n", #name, dlerror()); \
+            dlclose(lib); \
             return -2; \
         } \
     } while(0)
