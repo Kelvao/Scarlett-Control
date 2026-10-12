@@ -5,7 +5,7 @@
 #include "../src/cli_parse.h"
 #include "../src/scarlett_alsa.h"
 #include "../src/i18n.h"
-#include "../src/tray.h"
+#include "../src/autostart.h"
 
 int main(void) {
     printf("[TEST] Executando testes unitários do parser CLI...\n");
@@ -120,24 +120,24 @@ int main(void) {
     /* Fallback para texto não cadastrado */
     assert(strcmp(_("Unmapped String 123"), "Unmapped String 123") == 0);
 
-    /* Testar get_autostart_path */
+    /* Testar autostart_get_path */
     printf("[TEST] Executando testes unitários de autostart...\n");
     char autostart_buf[1024];
 
     /* Caso 1: XDG_CONFIG_HOME definido */
     setenv("XDG_CONFIG_HOME", "/custom/config", 1);
-    assert(get_autostart_path(autostart_buf, sizeof(autostart_buf)) == 0);
+    assert(autostart_get_path(autostart_buf, sizeof(autostart_buf)) == 0);
     assert(strcmp(autostart_buf, "/custom/config/autostart/scarlett-control.desktop") == 0);
 
     /* Caso 2: XDG_CONFIG_HOME vazio, recorre ao HOME */
     setenv("XDG_CONFIG_HOME", "", 1);
     setenv("HOME", "/custom/home", 1);
-    assert(get_autostart_path(autostart_buf, sizeof(autostart_buf)) == 0);
+    assert(autostart_get_path(autostart_buf, sizeof(autostart_buf)) == 0);
     assert(strcmp(autostart_buf, "/custom/home/.config/autostart/scarlett-control.desktop") == 0);
 
     /* Caso 3: XDG_CONFIG_HOME desfeito, recorre ao HOME */
     unsetenv("XDG_CONFIG_HOME");
-    assert(get_autostart_path(autostart_buf, sizeof(autostart_buf)) == 0);
+    assert(autostart_get_path(autostart_buf, sizeof(autostart_buf)) == 0);
     assert(strcmp(autostart_buf, "/custom/home/.config/autostart/scarlett-control.desktop") == 0);
 
     printf("[TEST] Todos os testes unitários passaram com sucesso!\n");

@@ -7,6 +7,7 @@
 #include <sys/stat.h>
 
 #include "tray.h"
+#include "autostart.h"
 #include "scarlett_alsa.h"
 #include "i18n.h"
 
@@ -92,88 +93,6 @@ static GtkWidget *item_mon_mono = NULL;
 static GtkWidget *item_mon_stereo = NULL;
 static GtkWidget *item_autostart = NULL;
 
-int get_autostart_path(char *buf, size_t buf_size) {
-    const char *config_home = getenv("XDG_CONFIG_HOME");
-    if (config_home && config_home[0]) {
-        snprintf(buf, buf_size, "%s/autostart/scarlett-control.desktop", config_home);
-    } else {
-        const char *home = getenv("HOME");
-        if (!home || !home[0]) return -1;
-        snprintf(buf, buf_size, "%s/.config/autostart/scarlett-control.desktop", home);
-    }
-    return 0;
-}
-
-static int is_autostart_enabled(void) {
-    char path[1024];
-    if (get_autostart_path(path, sizeof(path)) != 0) return 0;
-    return (access(path, F_OK) == 0);
-}
-
-static void ensure_autostart_dir(void) {
-    const char *config_home = getenv("XDG_CONFIG_HOME");
-    char dir[1024];
-    if (config_home && config_home[0]) {
-        mkdir(config_home, 0755);
-        snprintf(dir, sizeof(dir), "%s/autostart", config_home);
-        mkdir(dir, 0755);
-    } else {
-        const char *home = getenv("HOME");
-        if (home && home[0]) {
-            snprintf(dir, sizeof(dir), "%s/.config", home);
-            mkdir(dir, 0755);
-            snprintf(dir, sizeof(dir), "%s/.config/autostart", home);
-            mkdir(dir, 0755);
-        }
-    }
-}
-
-static void set_autostart_enabled(int enable) {
-    char path[1024];
-    if (get_autostart_path(path, sizeof(path)) != 0) return;
-
-    if (!enable) {
-        unlink(path);
-        return;
-    }
-
-    ensure_autostart_dir();
-
-    /* Determine binary / AppImage path */
-    char exec_cmd[2048];
-    const char *appimage = getenv("APPIMAGE");
-    if (appimage && appimage[0]) {
-        snprintf(exec_cmd, sizeof(exec_cmd), "\"%s\" tray", appimage);
-    } else {
-        char exe_buf[1024];
-        ssize_t len = readlink("/proc/self/exe", exe_buf, sizeof(exe_buf) - 1);
-        if (len > 0) {
-            exe_buf[len] = '\0';
-            snprintf(exec_cmd, sizeof(exec_cmd), "\"%s\" tray", exe_buf);
-        } else {
-            snprintf(exec_cmd, sizeof(exec_cmd), "scarlett-control tray");
-        }
-    }
-
-    FILE *f = fopen(path, "w");
-    if (f) {
-        fprintf(f,
-            "[Desktop Entry]\n"
-            "Name=Scarlett 2i2 Control\n"
-            "Comment=Hardware control and system tray for Focusrite Scarlett 2i2\n"
-            "Exec=%s\n"
-            "Icon=scarlett-control\n"
-            "Terminal=false\n"
-            "Type=Application\n"
-            "Categories=AudioVideo;Audio;Mixer;\n"
-            "StartupNotify=false\n"
-            "X-GNOME-Autostart-enabled=true\n",
-            exec_cmd
-        );
-        fclose(f);
-    }
-}
-
 static void update_ui_state(void) {
     if (!g_dev) return;
     g_updating_ui = 1;
@@ -193,7 +112,7 @@ static void update_ui_state(void) {
     }
 
     if (item_autostart) {
-        p_gtk_check_menu_item_set_active(item_autostart, is_autostart_enabled());
+        p_gtk_check_menu_item_set_active(item_autostart, autostart_is_enabled());
     }
 
     g_updating_ui = 0;
@@ -263,7 +182,7 @@ static void on_autostart_toggled(void *item, void *user_data) {
     (void)user_data;
     if (g_updating_ui) return;
     int active = p_gtk_check_menu_item_get_active(item);
-    set_autostart_enabled(active);
+    autostart_set_enabled(active);
 }
 
 static void on_about_response(void *dialog, int response_id, void *user_data) {
@@ -595,7 +514,7 @@ int tray_init_and_run(scarlett_device_t *dev) {
 
     /* Autostart */
     item_autostart = p_gtk_check_menu_item_new_with_label(_("menu_autostart"));
-    p_gtk_check_menu_item_set_active(item_autostart, is_autostart_enabled());
+    p_gtk_check_menu_item_set_active(item_autostart, autostart_is_enabled());
     p_g_signal_connect_data(item_autostart, "toggled", on_autostart_toggled, NULL, NULL, 0);
     p_gtk_menu_shell_append(menu, item_autostart);
 
